@@ -14,7 +14,8 @@ app = FastAPI(title="Shopify RAG Backend", version="0.1.0")
 # El widget corre en el dominio de la tienda -> restringe el CORS a ese origen.
 app.add_middleware(
     CORSMiddleware,
-        allow_origins=["*"],    allow_methods=["POST", "GET"],
+    allow_origins=[f"https://{_settings.shopify_shop_domain}"],
+    allow_methods=["POST", "GET"],
     allow_headers=["*"],
 )
 
@@ -27,10 +28,17 @@ async def _warmup() -> None:
     # Precarga el modelo de embeddings local para que la 1ª petición no espere la carga.
     import asyncio
 
-    from app.services import embeddings
+    from app.services import embeddings, public_ingest
 
     try:
         await asyncio.to_thread(embeddings._get_model)
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Carga inicial del catálogo (feed público, sin token) en segundo plano: no
+    # bloquea el arranque ni el health check; corre una sola vez si la tabla está vacía.
+    try:
+        asyncio.create_task(public_ingest.run_if_empty())
     except Exception:  # noqa: BLE001
         pass
 
