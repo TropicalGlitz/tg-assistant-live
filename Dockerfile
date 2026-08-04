@@ -13,4 +13,4 @@ COPY data ./data
 
 EXPOSE 8000
 # Puerto dinámico: Render/Railway inyectan $PORT; local usa 8000.
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "python -m scripts.import_rep_faqs data/rep_faqs_full.md || true; uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
