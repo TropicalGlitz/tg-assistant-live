@@ -11,11 +11,11 @@ _settings = get_settings()
 
 app = FastAPI(title="Shopify RAG Backend", version="0.1.0")
 
-# El widget corre en el dominio de la tienda -> restringe el CORS a ese origen.
+# El widget corre en el storefront (dominio propio + myshopify) -> CORS abierto.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[f"https://{_settings.shopify_shop_domain}"],
-    allow_methods=["POST", "GET"],
+    allow_origins=["*"],
+    allow_methods=["POST", "GET", "OPTIONS"],
     allow_headers=["*"],
 )
 
