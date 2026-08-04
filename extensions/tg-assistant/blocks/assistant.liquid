@@ -1,0 +1,33 @@
+{% comment %}
+  App embed block: inyecta el widget flotante en toda la tienda.
+  Activar en: Online Store → Themes → Customize → App embeds → "Tropical Glitz AI Assistant".
+  El chat habla con el backend vía App Proxy (/apps/assistant), heredando la sesión Shopify.
+{% endcomment %}
+
+<link rel="stylesheet" href="{{ 'assistant.css' | asset_url }}">
+
+<div id="tg-assistant-root"
+     data-proxy="/apps/assistant"
+     data-shop="{{ shop.permanent_domain }}"
+     data-primary="{{ block.settings.primary_color }}"
+     data-title="{{ block.settings.widget_title | escape }}"
+     data-subtitle="{{ block.settings.widget_subtitle | escape }}"
+     data-greeting="{{ block.settings.greeting | escape }}"
+     data-currency="{{ cart.currency.iso_code }}"
+     data-has-purchased="{% if customer and customer.orders_count > 0 %}1{% else %}0{% endif %}">
+</div>
+
+<script src="{{ 'assistant.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Tropical Glitz AI Assistant",
+  "target": "body",
+  "settings": [
+    { "type": "color",  "id": "primary_color",   "label": "Primary color",  "default": "#ef2c8f" },
+    { "type": "text",   "id": "widget_title",    "label": "Widget title",   "default": "Tropical Glitz AI Support" },
+    { "type": "text",   "id": "widget_subtitle", "label": "Subtitle",       "default": "Here to help you shop" },
+    { "type": "text",   "id": "greeting",        "label": "Proactive greeting", "default": "Welcome back! How may I be of service to you today?" }
+  ]
+}
+{% endschema %}

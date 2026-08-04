@@ -1,0 +1,173 @@
+"""Motor RAG híbrido: recupera de las 3 colecciones (productos + FAQs + KB),
+aplica el umbral de confianza y el escalado a humano, y genera con Claude.
+
+Portado del comportamiento de REP (teardown §5.1, §7.2) pero con grounding real
+en catálogo y baja latencia (streaming SSE).
+"""
+from __future__ import annotations
+
+import json
+import re
+from typing import Any
+
+from anthropic import AsyncAnthropic
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import get_settings
+from app.core.system_prompt import (
+    CONFIDENCE_THRESHOLD,
+    CONTACT,
+    ESCALATION_KEYWORDS,
+    SYSTEM_PROMPT,
+)
+from app.services import embeddings, kb_store, orders, vector_store
+
+_settings = get_settings()
+_llm = AsyncAnthropic(api_key=_settings.anthropic_api_key)
+
+# Temas que NO se responden con RAG: van a ruta determinista / handoff.
+HANDOFF_TOPICS = {"ORDER_STATUS", "CONTACT_DETAILS", "CUSTOMER_SUPPORT", "TRACKING", "CANCELLATION"}
+
+
+def _needs_escalation(query: str) -> bool:
+    q = query.lower()
+    return any(k in q for k in ESCALATION_KEYWORDS)
+
+
+def _contact_block() -> str:
+    return (
+        f"I'm sorry, I don't have that information right now. Please contact our team: "
+        f"email {CONTACT['email']} or call {CONTACT['phone']} ({CONTACT['hours']})."
+    )
+
+
+async def handle_order_intent(query: str) -> str | None:
+    """Ruta determinista para ORDER_STATUS/TRACKING. Devuelve texto listo o None si no aplica."""
+    if not orders.looks_like_order_query(query):
+        return None
+    m = orders._ORDER_RE.search(query)
+    email_m = re.search(r"[\w.+-]+@[\w-]+\.[\w.-]+", query)
+    order_no = m.group(1) if m else None
+    email = email_m.group(0) if email_m else None
+    if not order_no and not email:
+        return ("Happy to check your order. Please share your order number (e.g. #1234) "
+                "or the email used at checkout.")
+    try:
+        found = await orders.lookup_order(order_no, email)
+    except Exception:  # noqa: BLE001
+        found = None
+    if found:
+        return orders.format_order(found)
+    return (f"I couldn't find that order. Double-check the number/email, or reach us at "
+            f"{CONTACT['email']} / {CONTACT['phone']}.")
+
+
+async def retrieve(
+    session: AsyncSession, query: str, max_price: float | None = None
+) -> dict[str, Any]:
+    """Recupera de las 3 colecciones y devuelve hits + score máximo."""
+    q_vec = await embeddings.embed_text(query)
+    products = await vector_store.similarity_search(
+        session, embedding=q_vec, top_k=_settings.top_k, only_available=True, max_price=max_price
+    )
+    faqs = await kb_store.search_faqs(session, q_vec, top_k=4)
+    kb = await kb_store.search_kb(session, q_vec, top_k=3)
+    best = max(
+        [h["score"] for h in products] + [f["score"] for f in faqs] + [c["score"] for c in kb] + [0.0]
+    )
+    return {"products": products, "faqs": faqs, "kb": kb, "best_score": best}
+
+
+def build_context(hits: dict[str, Any]) -> str:
+    blocks: list[str] = []
+    for f in hits["faqs"]:
+        if f["score"] >= 0.35:
+            blocks.append(json.dumps({"type": "faq", "q": f["question"], "a": f["answer"],
+                                      "recommends": f["recommended_skus"]}, ensure_ascii=False))
+    for c in hits["kb"]:
+        if c["score"] >= 0.35:
+            blocks.append(json.dumps({"type": "guide", "doc": c["doc_name"],
+                                      "text": c["text"][:900]}, ensure_ascii=False))
+    for p in hits["products"]:
+        if p["score"] >= _settings.min_similarity:
+            pl = p["payload"]
+            blocks.append(json.dumps({
+                "type": "product",
+                "title": pl["title"],
+                "price_min": pl["price_min"], "price_max": pl.get("price_max"),
+                "currency": pl["currency"], "available": pl["available"],
+                "url": pl["url"], "product_type": pl.get("product_type"),
+                "collections": pl.get("collections", []),
+                "options": [v.get("title") for v in pl.get("variants", [])][:12],
+                "specs": pl.get("metafields", {}),   # specs custom del producto
+            }, ensure_ascii=False))
+    return "\n".join(blocks)
+
+
+async def answer_query(
+    session: AsyncSession, query: str, max_price: float | None = None
+) -> dict[str, Any]:
+    if _needs_escalation(query):
+        return {"answer": _contact_block(), "handoff": True, "sources": []}
+
+    order_reply = await handle_order_intent(query)
+    if order_reply is not None:
+        return {"answer": order_reply, "handoff": False, "sources": [{"source": "shopify", "ref": "orders"}]}
+
+    hits = await retrieve(session, query, max_price=max_price)
+    if hits["best_score"] < CONFIDENCE_THRESHOLD:
+        return {"answer": _contact_block(), "handoff": True, "sources": []}
+
+    context = build_context(hits)
+    msg = await _llm.messages.create(
+        model=_settings.llm_model,
+        max_tokens=_settings.llm_max_tokens,
+        system=SYSTEM_PROMPT,
+        messages=[{"role": "user",
+                   "content": f"CONTEXT (retrieved):\n{context}\n\nCUSTOMER: {query}"}],
+    )
+    answer = "".join(b.text for b in msg.content if b.type == "text")
+    return {"answer": answer, "handoff": False, "sources": _sources(hits)}
+
+
+async def answer_query_stream(session: AsyncSession, query: str, max_price: float | None = None):
+    """Generador async de tokens para SSE. Baja latencia percibida (lo que le faltaba a REP)."""
+    if _needs_escalation(query):
+        yield {"type": "message", "text": _contact_block()}
+        yield {"type": "done", "handoff": True}
+        return
+
+    order_reply = await handle_order_intent(query)
+    if order_reply is not None:
+        yield {"type": "message", "text": order_reply}
+        yield {"type": "done", "handoff": False, "sources": [{"source": "shopify", "ref": "orders"}]}
+        return
+
+    hits = await retrieve(session, query, max_price=max_price)
+    if hits["best_score"] < CONFIDENCE_THRESHOLD:
+        yield {"type": "message", "text": _contact_block()}
+        yield {"type": "done", "handoff": True}
+        return
+
+    context = build_context(hits)
+    async with _llm.messages.stream(
+        model=_settings.llm_model,
+        max_tokens=_settings.llm_max_tokens,
+        system=SYSTEM_PROMPT,
+        messages=[{"role": "user",
+                   "content": f"CONTEXT (retrieved):\n{context}\n\nCUSTOMER: {query}"}],
+    ) as stream:
+        async for delta in stream.text_stream:
+            yield {"type": "token", "text": delta}
+    yield {"type": "done", "handoff": False, "sources": _sources(hits)}
+
+
+def _sources(hits: dict[str, Any]) -> list[dict[str, Any]]:
+    out = []
+    for f in hits["faqs"][:3]:
+        out.append({"source": "faq", "ref": f["question"], "score": round(f["score"], 3)})
+    for c in hits["kb"][:2]:
+        out.append({"source": "kb", "ref": c["doc_name"], "score": round(c["score"], 3)})
+    for p in hits["products"][:3]:
+        out.append({"source": "product", "ref": p["payload"]["title"], "score": round(p["score"], 3)})
+    return out

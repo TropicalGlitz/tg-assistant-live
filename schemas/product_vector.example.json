@@ -1,0 +1,50 @@
+{
+  "product_id": "7891234567890",
+  "handle": "camiseta-tecnica-trail",
+  "url": "https://mi-tienda.myshopify.com/products/camiseta-tecnica-trail",
+  "title": "Camiseta Técnica Trail Pro",
+  "description": "Camiseta de running de secado rápido con tejido transpirable, costuras planas anti-rozaduras y protección UPF 50+. Ideal para trail y días calurosos.",
+  "product_type": "Camisetas",
+  "vendor": "Aurora Sport",
+  "tags": ["running", "trail", "transpirable", "verano", "upf50"],
+  "collections": ["Novedades", "Running Hombre"],
+  "options": ["Talla", "Color"],
+  "price_min": 39.90,
+  "price_max": 44.90,
+  "currency": "EUR",
+  "available": true,
+  "total_inventory": 128,
+  "variants": [
+    {
+      "variant_id": "41234567890123",
+      "title": "M / Negro",
+      "sku": "TRAIL-PRO-M-BLK",
+      "price": 39.90,
+      "compare_at_price": 49.90,
+      "available": true,
+      "inventory_quantity": 34,
+      "options": {"Talla": "M", "Color": "Negro"}
+    },
+    {
+      "variant_id": "41234567890124",
+      "title": "L / Azul",
+      "sku": "TRAIL-PRO-L-BLU",
+      "price": 44.90,
+      "compare_at_price": null,
+      "available": true,
+      "inventory_quantity": 12,
+      "options": {"Talla": "L", "Color": "Azul"}
+    }
+  ],
+  "featured_image": "https://cdn.shopify.com/s/files/1/xxxx/camiseta-trail-front.jpg",
+  "images": [
+    "https://cdn.shopify.com/s/files/1/xxxx/camiseta-trail-front.jpg",
+    "https://cdn.shopify.com/s/files/1/xxxx/camiseta-trail-back.jpg"
+  ],
+  "status": "active",
+  "shopify_updated_at": "2026-08-02T10:15:00+00:00",
+  "ingested_at": "2026-08-03T09:00:00+00:00",
+  "content_hash": "9f2c8b1e5a...(sha256 del texto embebido)",
+
+  "_nota_persistencia": "En pgvector se guarda: product_id (PK), embedding VECTOR(1536), payload JSONB (todo lo anterior salvo description/images pesados si quieres aligerar), content_hash. El campo `description`+metadatos semánticos se usan SOLO para generar el embedding vía ProductDocument.to_embedding_text(); NO todo el JSON se vectoriza."
+}

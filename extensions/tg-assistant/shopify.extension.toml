@@ -1,0 +1,14 @@
+# Theme App Extension — se instala como App Block desde el editor de temas de Shopify,
+# sin editar theme.liquid. Requiere la Custom App instalada y el App Proxy configurado
+# (Apps → tu app → App proxy: subpath prefix "apps", subpath "assistant",
+#  proxy URL "https://tu-backend.com").
+api_version = "2025-07"
+
+[[extensions]]
+name = "Tropical Glitz AI Assistant"
+handle = "tg-assistant"
+type = "theme"
+
+  [extensions.capabilities]
+  # el bloque se puede colocar en cualquier parte del tema (app embed)
+  block_only = false
