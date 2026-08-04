@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 COPY scripts ./scripts
 COPY sql ./sql
+COPY data ./data
 
 EXPOSE 8000
 # Puerto dinámico: Render/Railway inyectan $PORT; local usa 8000.
