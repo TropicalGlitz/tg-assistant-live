@@ -115,6 +115,21 @@ def build_context(hits: dict[str, Any]) -> str:
     return "\n".join(blocks)
 
 
+def _user_turn(context: str, query: str, grounded: bool) -> str:
+    """Arma el turno del usuario para Claude, indicando qué tan fuerte es el
+    grounding del catálogo para que sepa cuándo apoyarse en CONTEXT vs. su
+    experiencia general (sin inventar datos de la tienda)."""
+    ctx = context.strip() or "(no strong catalog/FAQ match for this question)"
+    strength = (
+        "STRONG — prefer CONTEXT for the answer and cite the product(s)/FAQ."
+        if grounded
+        else "WEAK — CONTEXT may not cover this. If it's a general paint/automotive "
+        "how-to question, answer from your expertise. Do NOT invent store-specific "
+        "facts (prices, stock, policies)."
+    )
+    return f"CONTEXT (retrieved from store catalog/FAQs/guides):\n{ctx}\n\nGROUNDING: {strength}\n\nCUSTOMER: {query}"
+
+
 async def answer_query(
     session: AsyncSession, query: str, max_price: float | None = None
 ) -> dict[str, Any]:
@@ -126,22 +141,24 @@ async def answer_query(
         return {"answer": order_reply, "handoff": False, "sources": [{"source": "shopify", "ref": "orders"}]}
 
     hits = await retrieve(session, query, max_price=max_price)
-    if hits["best_score"] < CONFIDENCE_THRESHOLD:
-        return {"answer": _contact_block(), "handoff": True, "sources": []}
+    grounded = hits["best_score"] >= CONFIDENCE_THRESHOLD
 
+    # Ya NO cortamos en seco cuando la confianza es baja. En su lugar dejamos que
+    # Claude responda: si es una pregunta GENERAL de técnica de pintura/automotriz
+    # la contesta desde su experiencia; si es un dato específico de la tienda que no
+    # está en CONTEXT, el system prompt le indica no inventar y ofrecer contacto.
     context = build_context(hits)
     msg = await _llm.messages.create(
         model=_settings.llm_model,
         max_tokens=_settings.llm_max_tokens,
         system=SYSTEM_PROMPT,
-        messages=[{"role": "user",
-                   "content": f"CONTEXT (retrieved):\n{context}\n\nCUSTOMER: {query}"}],
+        messages=[{"role": "user", "content": _user_turn(context, query, grounded)}],
     )
     answer = "".join(b.text for b in msg.content if b.type == "text")
     return {
         "answer": answer,
         "handoff": False,
-        "sources": _sources(hits),
+        "sources": _sources(hits) if grounded else [],
         "products": _product_cards(hits),
     }
 
@@ -160,22 +177,18 @@ async def answer_query_stream(session: AsyncSession, query: str, max_price: floa
         return
 
     hits = await retrieve(session, query, max_price=max_price)
-    if hits["best_score"] < CONFIDENCE_THRESHOLD:
-        yield {"type": "message", "text": _contact_block()}
-        yield {"type": "done", "handoff": True}
-        return
+    grounded = hits["best_score"] >= CONFIDENCE_THRESHOLD
 
     context = build_context(hits)
     async with _llm.messages.stream(
         model=_settings.llm_model,
         max_tokens=_settings.llm_max_tokens,
         system=SYSTEM_PROMPT,
-        messages=[{"role": "user",
-                   "content": f"CONTEXT (retrieved):\n{context}\n\nCUSTOMER: {query}"}],
+        messages=[{"role": "user", "content": _user_turn(context, query, grounded)}],
     ) as stream:
         async for delta in stream.text_stream:
             yield {"type": "token", "text": delta}
-    yield {"type": "done", "handoff": False, "sources": _sources(hits)}
+    yield {"type": "done", "handoff": False, "sources": _sources(hits) if grounded else []}
 
 
 def _sources(hits: dict[str, Any]) -> list[dict[str, Any]]:
