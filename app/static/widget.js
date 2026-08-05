@@ -65,6 +65,26 @@
     return "$" + v.toFixed(2);
   }
 
+  var SHOP_DOMAIN = "7b297d-7a.myshopify.com", STORE_DOMAIN = "tropicalglitz.net";
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  // Convierte un subconjunto de markdown (enlaces y negrita) a HTML limpio, y
+  // normaliza el dominio myshopify -> dominio propio para que el enlace sea corto.
+  function mdToHtml(s) {
+    s = esc(s);
+    s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, function (_m, t, u) {
+      u = u.split(SHOP_DOMAIN).join(STORE_DOMAIN);
+      return '<a href="' + u + '" target="_top" rel="noopener">' + t + "</a>";
+    });
+    // URLs "sueltas" (sin formato markdown) también se vuelven enlaces cortos.
+    s = s.replace(/(^|[\s(])(https?:\/\/[^\s)]+)/g, function (_m, pre, u) {
+      var href = u.split(SHOP_DOMAIN).join(STORE_DOMAIN);
+      var label = href.replace(/^https?:\/\//, "").replace(/\/$/, "");
+      return pre + '<a href="' + href + '" target="_top" rel="noopener">' + label + "</a>";
+    });
+    s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    return s;
+  }
+
   function boot() {
     if (document.getElementById("tg-w")) return;
     var style = document.createElement("style");
@@ -189,10 +209,11 @@
       fetch(BACKEND + "/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ message: q }) })
         .then(function (r) { return r.json(); })
         .then(function (j) {
-          ty.remove(); var ai = add("m ai", ""); var words = (j.answer || "").split(" "); var i = 0;
+          ty.remove(); var ai = add("m ai", ""); var full = j.answer || ""; var words = full.split(" "); var i = 0;
           (function tick() {
-            if (i < words.length) { ai.textContent += (i ? " " : "") + words[i++]; log.scrollTop = log.scrollHeight; setTimeout(tick, 18); }
+            if (i < words.length) { i++; ai.innerHTML = mdToHtml(words.slice(0, i).join(" ")); log.scrollTop = log.scrollHeight; setTimeout(tick, 18); }
             else {
+              ai.innerHTML = mdToHtml(full);
               renderProducts(j.products);
               if (j.sources && j.sources.length) { var s = add("src"); s.textContent = "Sources: " + j.sources.map(function (x) { return x.source + ":" + (x.ref || "").slice(0, 26); }).join(" · "); }
               chips(j.handoff ? ["Contact support", "Browse best sellers"] : ["Tell me more", "Any promotions?"]);
