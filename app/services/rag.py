@@ -127,7 +127,12 @@ async def answer_query(
                    "content": f"CONTEXT (retrieved):\n{context}\n\nCUSTOMER: {query}"}],
     )
     answer = "".join(b.text for b in msg.content if b.type == "text")
-    return {"answer": answer, "handoff": False, "sources": _sources(hits)}
+    return {
+        "answer": answer,
+        "handoff": False,
+        "sources": _sources(hits),
+        "products": _product_cards(hits),
+    }
 
 
 async def answer_query_stream(session: AsyncSession, query: str, max_price: float | None = None):
@@ -171,3 +176,35 @@ def _sources(hits: dict[str, Any]) -> list[dict[str, Any]]:
     for p in hits["products"][:3]:
         out.append({"source": "product", "ref": p["payload"]["title"], "score": round(p["score"], 3)})
     return out
+
+
+def _product_cards(hits: dict[str, Any], limit: int = 3) -> list[dict[str, Any]]:
+    """Tarjetas de producto para el widget: imagen, precio y variantes con su ID
+    numérico (para agregar al carrito vía la AJAX Cart API del storefront)."""
+    cards: list[dict[str, Any]] = []
+    for p in hits["products"][:limit]:
+        if p["score"] < _settings.min_similarity:
+            continue
+        pl = p["payload"]
+        variants = [
+            {
+                "id": v.get("variant_id"),
+                "title": v.get("title") or "",
+                "price": v.get("price"),
+                "available": bool(v.get("available", True)),
+            }
+            for v in pl.get("variants", [])
+            if v.get("variant_id")
+        ]
+        if not variants:
+            continue
+        cards.append({
+            "title": pl["title"],
+            "url": pl.get("url"),
+            "image": pl.get("featured_image"),
+            "price_min": pl.get("price_min"),
+            "price_max": pl.get("price_max"),
+            "currency": pl.get("currency", "USD"),
+            "variants": variants,
+        })
+    return cards
