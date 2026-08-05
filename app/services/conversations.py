@@ -18,8 +18,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 _log = logging.getLogger("conversations")
 
+# Nombre propio para evitar chocar con una tabla `conversations` preexistente
+# (de las migraciones iniciales, con otro esquema). Este es el log del asistente.
 CREATE_SQL = """
-CREATE TABLE IF NOT EXISTS conversations (
+CREATE TABLE IF NOT EXISTS chat_logs (
     id BIGSERIAL PRIMARY KEY,
     session_id TEXT,
     message TEXT NOT NULL,
@@ -29,8 +31,8 @@ CREATE TABLE IF NOT EXISTS conversations (
     sources JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS conversations_created_idx ON conversations (created_at DESC);
-CREATE INDEX IF NOT EXISTS conversations_session_idx ON conversations (session_id, created_at);
+CREATE INDEX IF NOT EXISTS chat_logs_created_idx ON chat_logs (created_at DESC);
+CREATE INDEX IF NOT EXISTS chat_logs_session_idx ON chat_logs (session_id, created_at);
 """
 
 
@@ -74,7 +76,7 @@ async def log_exchange(
         await session.execute(
             text(
                 """
-                INSERT INTO conversations (session_id, message, answer, mode, handoff, sources)
+                INSERT INTO chat_logs (session_id, message, answer, mode, handoff, sources)
                 VALUES (:sid, :msg, :ans, :mode, :handoff, CAST(:sources AS jsonb))
                 """
             ),
@@ -106,7 +108,7 @@ async def fetch_recent(
             text(
                 f"""
                 SELECT id, session_id, message, answer, mode, handoff, sources, created_at
-                FROM conversations
+                FROM chat_logs
                 {where}
                 ORDER BY created_at DESC
                 LIMIT :limit
@@ -130,7 +132,7 @@ async def stats(session: AsyncSession) -> dict[str, int]:
                     count(*) FILTER (WHERE mode = 'general') AS general,
                     count(*) FILTER (WHERE mode = 'handoff') AS handoff,
                     count(*) FILTER (WHERE mode = 'catalog') AS catalog
-                FROM conversations
+                FROM chat_logs
                 """
             )
         )
