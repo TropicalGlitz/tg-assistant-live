@@ -9,9 +9,10 @@ Dos vías:
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,6 +25,19 @@ from app.services import proactive, rag
 
 router = APIRouter(tags=["chat"])
 _settings = get_settings()
+
+# Widget del storefront servido desde el backend: el tema solo carga
+# <script src=".../widget.js" defer></script>, así se actualiza sin tocar el tema.
+_WIDGET_JS = Path(__file__).resolve().parents[2] / "static" / "widget.js"
+
+
+@router.get("/widget.js")
+async def widget_js() -> FileResponse:
+    return FileResponse(
+        _WIDGET_JS,
+        media_type="application/javascript",
+        headers={"Cache-Control": "public, max-age=300"},
+    )
 
 
 class ChatRequest(BaseModel):
