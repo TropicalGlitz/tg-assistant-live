@@ -6,6 +6,15 @@
 (function () {
   var BACKEND = "https://tg-assistant-ie5p.onrender.com";
 
+  // ID de sesión por navegador: agrupa las preguntas de un mismo visitante en el panel.
+  var SID = (function () {
+    try {
+      var k = "tg_sid", v = localStorage.getItem(k);
+      if (!v) { v = Date.now().toString(36) + Math.random().toString(36).slice(2, 8); localStorage.setItem(k, v); }
+      return v;
+    } catch (e) { return "anon"; }
+  })();
+
   var CSS =
     '#tg-w *{box-sizing:border-box}' +
     '#tg-w{--tg:#ef2c8f;--tg2:#f3f3f3;--tgt:#1b1b1f;--tgm:#6b6b74;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}' +
@@ -206,7 +215,7 @@
     function ask(q) {
       if (!q || !q.trim()) return; C.innerHTML = ""; add("m u", q); T.value = "";
       var ty = add("ty"); ty.innerHTML = "<i></i><i></i><i></i>";
-      fetch(BACKEND + "/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ message: q }) })
+      fetch(BACKEND + "/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ message: q, session_id: SID }) })
         .then(function (r) { return r.json(); })
         .then(function (j) {
           ty.remove(); var ai = add("m ai", ""); var full = j.answer || ""; var words = full.split(" "); var i = 0;
