@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     top_k: int = 6
     min_similarity: float = 0.25  # umbral de corte del score de similitud
 
+    # --- Admin (panel de conversaciones) ---
+    # Token para abrir /admin/conversations?key=... Si queda vacío, el panel se
+    # deshabilita (responde 401). Poner un valor secreto propio en Render.
+    admin_token: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:
