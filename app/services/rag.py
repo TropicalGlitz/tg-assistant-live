@@ -28,6 +28,17 @@ _llm = AsyncAnthropic(api_key=_settings.anthropic_api_key)
 # Temas que NO se responden con RAG: van a ruta determinista / handoff.
 HANDOFF_TOPICS = {"ORDER_STATUS", "CONTACT_DETAILS", "CUSTOMER_SUPPORT", "TRACKING", "CANCELLATION"}
 
+# El feed público devuelve URLs con el dominio myshopify; las mostramos con el
+# dominio propio de la tienda para que el enlace sea corto y de marca.
+_SHOP_DOMAIN = _settings.shopify_shop_domain
+_STORE_DOMAIN = "tropicalglitz.net"
+
+
+def _pretty_url(url: str | None) -> str | None:
+    if url and _SHOP_DOMAIN and _SHOP_DOMAIN in url:
+        return url.replace(_SHOP_DOMAIN, _STORE_DOMAIN)
+    return url
+
 
 def _needs_escalation(query: str) -> bool:
     q = query.lower()
@@ -96,7 +107,7 @@ def build_context(hits: dict[str, Any]) -> str:
                 "title": pl["title"],
                 "price_min": pl["price_min"], "price_max": pl.get("price_max"),
                 "currency": pl["currency"], "available": pl["available"],
-                "url": pl["url"], "product_type": pl.get("product_type"),
+                "url": _pretty_url(pl["url"]), "product_type": pl.get("product_type"),
                 "collections": pl.get("collections", []),
                 "options": [v.get("title") for v in pl.get("variants", [])][:12],
                 "specs": pl.get("metafields", {}),   # specs custom del producto
@@ -200,7 +211,7 @@ def _product_cards(hits: dict[str, Any], limit: int = 3) -> list[dict[str, Any]]
             continue
         cards.append({
             "title": pl["title"],
-            "url": pl.get("url"),
+            "url": _pretty_url(pl.get("url")),
             "image": pl.get("featured_image"),
             "price_min": pl.get("price_min"),
             "price_max": pl.get("price_max"),
