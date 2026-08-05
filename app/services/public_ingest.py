@@ -119,9 +119,10 @@ async def _count_products() -> int:
         return int(row[0]) if row else 0
 
 
-async def run_backfill() -> dict[str, int]:
-    """Ingiere todo el catálogo público. Idempotente vía content_hash."""
-    raw_products = await fetch_all_public()
+async def run_backfill(raw_products: list[dict[str, Any]] | None = None) -> dict[str, int]:
+    """Ingiere el catálogo público. Idempotente vía content_hash (reanuda sin re-embeber)."""
+    if raw_products is None:
+        raw_products = await fetch_all_public()
     ok = 0
     failed = 0
     async with AsyncSessionLocal() as session:
@@ -137,17 +138,28 @@ async def run_backfill() -> dict[str, int]:
 
 
 async def run_if_empty() -> None:
-    """Corre el backfill solo si `product_vectors` está vacío (evita re-trabajo por arranque)."""
+    """Corre el backfill si el catálogo está INCOMPLETO (reanuda cargas parciales).
+
+    Compara el número de productos del feed con las filas en `product_vectors`.
+    Como `_persist` es idempotente (content_hash), reingerir solo re-embebe lo que
+    falta o cambió; si ya está completo, no hace nada.
+    """
+    try:
+        raw_products = await fetch_all_public()
+    except Exception:  # noqa: BLE001
+        _log.exception("No se pudo obtener el feed público; se omite backfill")
+        return
+    total = len(raw_products)
     try:
         count = await _count_products()
     except Exception:  # noqa: BLE001
-        _log.exception("No se pudo consultar product_vectors; se omite backfill")
+        _log.exception("No se pudo consultar product_vectors")
+        count = 0
+    if total > 0 and count >= total:
+        _log.info("Catálogo completo (%s/%s); se omite backfill", count, total)
         return
-    if count > 0:
-        _log.info("product_vectors ya tiene %s filas; se omite backfill", count)
-        return
-    _log.info("product_vectors vacío; iniciando backfill del feed público…")
+    _log.info("Catálogo incompleto (%s/%s); iniciando backfill del feed público…", count, total)
     try:
-        await run_backfill()
+        await run_backfill(raw_products)
     except Exception:  # noqa: BLE001
         _log.exception("Backfill público falló")
