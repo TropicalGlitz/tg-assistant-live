@@ -28,7 +28,7 @@ async def _warmup() -> None:
     # Precarga el modelo de embeddings local para que la 1ª petición no espere la carga.
     import asyncio
 
-    from app.services import embeddings, public_ingest
+    from app.services import embeddings, kb_seed, public_ingest
 
     try:
         await asyncio.to_thread(embeddings._get_model)
@@ -39,6 +39,13 @@ async def _warmup() -> None:
     # bloquea el arranque ni el health check; corre una sola vez si la tabla está vacía.
     try:
         asyncio.create_task(public_ingest.run_if_empty())
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Siembra la base de conocimiento automotriz/pintura (respuestas generales de
+    # técnica) en segundo plano: idempotente, solo inserta lo que falte.
+    try:
+        asyncio.create_task(kb_seed.run_seed())
     except Exception:  # noqa: BLE001
         pass
 
