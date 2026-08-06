@@ -229,7 +229,7 @@
             }
           })();
         })
-        .catch(function () { ty.remove(); add("m ai", "Sorry, something went wrong. Email tropicalglitz@gmail.com or call 786-383-3013."); });
+        .catch(function () { ty.remove(); add("m ai", "Sorry, something went wrong. Email support@tropicalglitz.net or call 786-383-3013."); });
     }
     L.onclick = function () { P.dataset.open === "true" ? close() : open(); };
     document.getElementById("tg-x").onclick = close;
