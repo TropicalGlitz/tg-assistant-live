@@ -120,6 +120,43 @@ async def fetch_recent(
     return [dict(r) for r in rows]
 
 
+async def recent_history(
+    session: AsyncSession, session_id: str | None, limit: int = 6
+) -> list[dict[str, str]]:
+    """Últimos intercambios de esta sesión como mensajes para Claude (memoria).
+
+    Devuelve pares user/assistant en orden cronológico para que el asistente
+    continúe la conversación en lugar de tratar cada mensaje por separado.
+    """
+    if not session_id:
+        return []
+    await _ensure(session)
+    try:
+        rows = (
+            await session.execute(
+                text(
+                    """
+                    SELECT message, answer FROM chat_logs
+                    WHERE session_id = :sid
+                    ORDER BY created_at DESC
+                    LIMIT :n
+                    """
+                ),
+                {"sid": session_id, "n": limit},
+            )
+        ).mappings().all()
+    except Exception:  # noqa: BLE001
+        _log.exception("No se pudo leer el historial de la sesión")
+        return []
+    msgs: list[dict[str, str]] = []
+    for r in reversed(rows):  # cronológico
+        if r.get("message"):
+            msgs.append({"role": "user", "content": r["message"]})
+        if r.get("answer"):
+            msgs.append({"role": "assistant", "content": r["answer"]})
+    return msgs
+
+
 async def stats(session: AsyncSession) -> dict[str, int]:
     await _ensure(session)
     row = (
