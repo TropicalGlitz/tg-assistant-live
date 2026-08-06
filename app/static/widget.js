@@ -15,16 +15,21 @@
     } catch (e) { return "anon"; }
   })();
 
+  var LOGO = BACKEND + "/tg-logo.png";
+
   var CSS =
     '#tg-w *{box-sizing:border-box}' +
     '#tg-w{--tg:#ef2c8f;--tg2:#f3f3f3;--tgt:#1b1b1f;--tgm:#6b6b74;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}' +
-    '#tg-launch{position:fixed;right:20px;bottom:20px;width:60px;height:60px;border-radius:50%;border:0;background:var(--tg);color:#fff;cursor:pointer;box-shadow:0 12px 40px rgba(0,0,0,.18);display:grid;place-items:center;font-size:26px;z-index:2147483000;transition:transform .18s}' +
+    '#tg-launch{position:fixed;right:20px;bottom:20px;width:62px;height:60px;border-radius:20px 20px 20px 6px;border:0;background:#fff;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.22);display:grid;place-items:center;padding:0;z-index:2147483000;transition:transform .18s}' +
+    '#tg-launch::after{content:"";position:absolute;left:13px;bottom:-6px;width:0;height:0;border:7px solid transparent;border-top-color:#fff;border-bottom:0}' +
+    '#tg-launch img{width:46px;height:46px;object-fit:contain;border-radius:50%;display:block;pointer-events:none}' +
     '#tg-launch:hover{transform:scale(1.06)}' +
     '#tg-panel{position:fixed;right:20px;bottom:20px;width:min(400px,calc(100vw - 32px));height:min(640px,calc(100vh - 40px));background:#fff;color:var(--tgt);border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.22);display:flex;flex-direction:column;overflow:hidden;z-index:2147483001;opacity:0;transform:translateY(12px) scale(.98);pointer-events:none;transition:opacity .2s,transform .2s}' +
     '#tg-panel[data-open="true"]{opacity:1;transform:none;pointer-events:auto}' +
     '@media (prefers-reduced-motion:reduce){#tg-panel,#tg-launch{transition:none}}' +
     '#tg-w .h{background:var(--tg);color:#fff;padding:16px 18px;display:flex;align-items:center;gap:12px}' +
-    '#tg-w .av{width:40px;height:40px;border-radius:50%;background:#ffffff33;display:grid;place-items:center;font-size:22px}' +
+    '#tg-w .av{width:40px;height:40px;border-radius:50%;background:#fff;display:grid;place-items:center;overflow:hidden}' +
+    '#tg-w .av img{width:34px;height:34px;object-fit:contain}' +
     '#tg-w .h h2{margin:0;font-size:15px;font-weight:800}#tg-w .h span{font-size:12px;opacity:.9}' +
     '#tg-w .x{margin-left:auto;background:0;border:0;color:#fff;font-size:20px;cursor:pointer;padding:6px;line-height:1}' +
     '#tg-log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:#fafafa}' +
@@ -58,9 +63,9 @@
     '#tg-w .ft{text-align:center;font-size:10px;color:#b8b8c2;padding:6px}';
 
   var HTML =
-    '<button id="tg-launch" aria-label="Open support chat" aria-expanded="false">🌴</button>' +
+    '<button id="tg-launch" aria-label="Open support chat" aria-expanded="false"><img alt="Chat" src="' + LOGO + '"></button>' +
     '<section id="tg-panel" role="dialog" aria-modal="false" aria-label="Tropical Glitz AI Support" data-open="false">' +
-      '<div class="h"><div class="av">🌴</div><div><h2>Tropical Glitz AI Support</h2><span>Here to help you shop</span></div>' +
+      '<div class="h"><div class="av"><img alt="" src="' + LOGO + '"></div><div><h2>Tropical Glitz AI Support</h2><span>Here to help you shop</span></div>' +
       '<button class="x" id="tg-x" aria-label="Close">✕</button></div>' +
       '<div id="tg-log" aria-live="polite"></div>' +
       '<div id="tg-chips"></div>' +
