@@ -131,7 +131,10 @@ def _user_turn(context: str, query: str, grounded: bool) -> str:
 
 
 async def answer_query(
-    session: AsyncSession, query: str, max_price: float | None = None
+    session: AsyncSession,
+    query: str,
+    max_price: float | None = None,
+    history: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
     if _needs_escalation(query):
         return {"answer": _contact_block(), "handoff": True, "sources": []}
@@ -148,18 +151,21 @@ async def answer_query(
     # la contesta desde su experiencia; si es un dato específico de la tienda que no
     # está en CONTEXT, el system prompt le indica no inventar y ofrecer contacto.
     context = build_context(hits)
+    messages = list(history or []) + [{"role": "user", "content": _user_turn(context, query, grounded)}]
     msg = await _llm.messages.create(
         model=_settings.llm_model,
         max_tokens=_settings.llm_max_tokens,
         system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": _user_turn(context, query, grounded)}],
+        messages=messages,
     )
     answer = "".join(b.text for b in msg.content if b.type == "text")
     return {
         "answer": answer,
         "handoff": False,
         "sources": _sources(hits) if grounded else [],
-        "products": _product_cards(hits),
+        # Solo mostramos tarjetas de los productos que el asistente REALMENTE
+        # recomendó (enlazó) en su respuesta, no en cada mensaje.
+        "products": _relevant_cards(hits, answer),
     }
 
 
@@ -199,6 +205,20 @@ def _sources(hits: dict[str, Any]) -> list[dict[str, Any]]:
         out.append({"source": "kb", "ref": c["doc_name"], "score": round(c["score"], 3)})
     for p in hits["products"][:3]:
         out.append({"source": "product", "ref": p["payload"]["title"], "score": round(p["score"], 3)})
+    return out
+
+
+def _relevant_cards(hits: dict[str, Any], answer: str) -> list[dict[str, Any]]:
+    """Filtra las tarjetas a SOLO los productos que el asistente enlazó/mencionó
+    en su respuesta. Si la respuesta no recomienda productos (p. ej. una pregunta
+    de técnica), no se muestra ninguna tarjeta."""
+    ans = (answer or "").lower()
+    out: list[dict[str, Any]] = []
+    for c in _product_cards(hits):
+        url = (c.get("url") or "").lower()
+        title = (c.get("title") or "").lower()
+        if (url and url in ans) or (title and title in ans):
+            out.append(c)
     return out
 
 
