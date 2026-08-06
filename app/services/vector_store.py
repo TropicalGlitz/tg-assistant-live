@@ -115,6 +115,32 @@ async def similarity_search(
     return [dict(r) for r in rows]
 
 
+async def get_products_by_handles(
+    session: AsyncSession, handles: list[str], only_available: bool = True
+) -> list[dict[str, Any]]:
+    """Devuelve los payloads de productos cuyo handle (parte final de /products/<handle>)
+    esté en `handles`. Se usa para armar tarjetas de productos que el asistente ENLAZÓ
+    en su respuesta aunque no hayan salido en la búsqueda por similitud."""
+    hs = [h.lower() for h in handles if h]
+    if not hs:
+        return []
+    avail = "AND (payload->>'available')::boolean = true" if only_available else ""
+    rows = (
+        await session.execute(
+            text(
+                f"""
+                SELECT payload
+                FROM product_vectors
+                WHERE lower(split_part(payload->>'url', '/products/', 2)) = ANY(:handles)
+                {avail}
+                """
+            ),
+            {"handles": hs},
+        )
+    ).mappings().all()
+    return [dict(r)["payload"] for r in rows]
+
+
 def _dumps(obj: Any) -> str:
     import json
 
