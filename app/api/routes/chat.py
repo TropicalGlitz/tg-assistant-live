@@ -42,6 +42,18 @@ async def widget_js() -> FileResponse:
     )
 
 
+_LOGO_PNG = Path(__file__).resolve().parents[2] / "static" / "tg-logo.png"
+
+
+@router.get("/tg-logo.png")
+async def tg_logo() -> FileResponse:
+    return FileResponse(
+        _LOGO_PNG,
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=1000)
     session_id: str | None = None
