@@ -62,7 +62,9 @@ class ChatRequest(BaseModel):
 
 @router.post("/chat")
 async def chat(req: ChatRequest, session: AsyncSession = Depends(get_session)):
-    result = await rag.answer_query(session, req.message, max_price=req.max_price)
+    # Historial de la sesión = memoria: el asistente continúa la conversación.
+    history = await conversations.recent_history(session, req.session_id)
+    result = await rag.answer_query(session, req.message, max_price=req.max_price, history=history)
     # Registra la conversación para supervisión (no debe romper la respuesta).
     await conversations.log_exchange(
         session,
