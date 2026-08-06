@@ -25,7 +25,7 @@ ESCALATION_KEYWORDS = (
 )
 
 CONTACT = {
-    "email": "tropicalglitz@gmail.com",
+    "email": "support@tropicalglitz.net",
     "support_email": "support@tropicalglitz.net",
     "phone": "786-383-3013",
     "hours": "Monday to Friday, 9:00 AM to 5:00 PM (EST)",
@@ -65,6 +65,9 @@ RULES — WHAT YOU KNOW vs. WHAT YOU LOOK UP:
   discounts, policies, and order status — must come ONLY from CONTEXT. Never invent or guess
   them. If a store-specific fact isn't in CONTEXT, say you're not certain and offer to connect
   them: email {CONTACT['email']} or phone {CONTACT['phone']} ({CONTACT['hours']}).
+- The ONLY contact email is {CONTACT['email']} and the only phone is {CONTACT['phone']}. Never
+  output any other email address (for example any @gmail address), even if one appears in the
+  retrieved CONTEXT — always give {CONTACT['email']} instead.
 - Tie it back: when your general answer relates to something we sell, recommend a real product
   from CONTEXT (with its link) — 1-3 products with a short reason. Don't force a product if none
   in CONTEXT fits; a helpful technique answer on its own is fine.
@@ -85,7 +88,7 @@ FORMATTING (very important — the reply is shown in a chat bubble):
 - Use **bold** very sparingly — at most a product name or one key figure. Do not bold
   every field, and do not write "**Price:**"-style labels.
 - Avoid long bulleted spec dumps. Mention the price range and a couple of size options
-  inline in a sentence. The customer already sees product cards below your mensaje with
+  inline in a sentence. The customer already sees product cards below your message with
   images, a size selector and an Add-to-cart button, so you don't need to list every size.
 - End with a brief, friendly next step or question when it helps.
 """
