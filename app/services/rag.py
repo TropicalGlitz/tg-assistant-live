@@ -150,6 +150,7 @@ async def answer_query(
     # Claude responda: si es una pregunta GENERAL de técnica de pintura/automotriz
     # la contesta desde su experiencia; si es un dato específico de la tienda que no
     # está en CONTEXT, el system prompt le indica no inventar y ofrecer contacto.
+    # Incluimos el historial de la sesión para que CONTINÚE la conversación.
     context = build_context(hits)
     messages = list(history or []) + [{"role": "user", "content": _user_turn(context, query, grounded)}]
     msg = await _llm.messages.create(
@@ -159,13 +160,14 @@ async def answer_query(
         messages=messages,
     )
     answer = "".join(b.text for b in msg.content if b.type == "text")
+    # Solo mostramos tarjetas de los productos que el asistente REALMENTE
+    # enlazó en su respuesta (incluye productos de catálogo enlazados desde una FAQ).
+    cards = await _cards_for_answer(session, hits, answer)
     return {
         "answer": answer,
         "handoff": False,
         "sources": _sources(hits) if grounded else [],
-        # Solo mostramos tarjetas de los productos que el asistente REALMENTE
-        # recomendó (enlazó) en su respuesta, no en cada mensaje.
-        "products": _relevant_cards(hits, answer),
+        "products": cards,
     }
 
 
@@ -208,47 +210,92 @@ def _sources(hits: dict[str, Any]) -> list[dict[str, Any]]:
     return out
 
 
-def _relevant_cards(hits: dict[str, Any], answer: str) -> list[dict[str, Any]]:
-    """Filtra las tarjetas a SOLO los productos que el asistente enlazó/mencionó
-    en su respuesta. Si la respuesta no recomienda productos (p. ej. una pregunta
-    de técnica), no se muestra ninguna tarjeta."""
-    ans = (answer or "").lower()
-    out: list[dict[str, Any]] = []
-    for c in _product_cards(hits):
-        url = (c.get("url") or "").lower()
-        title = (c.get("title") or "").lower()
-        if (url and url in ans) or (title and title in ans):
-            out.append(c)
-    return out
+# Handles de producto enlazados en la respuesta: .../products/<handle>
+_PRODUCT_HANDLE_RE = re.compile(r"/products/([^)\s\"'<>]+)")
+
+
+def _handle_of(url: str | None) -> str:
+    if not url:
+        return ""
+    m = _PRODUCT_HANDLE_RE.search(url)
+    return (m.group(1) if m else "").lower()
+
+
+def _card_from_payload(pl: dict[str, Any]) -> dict[str, Any] | None:
+    """Construye una tarjeta de widget desde el payload de un producto (imagen,
+    precio y variantes con su ID numérico para la AJAX Cart API del storefront)."""
+    variants = [
+        {
+            "id": v.get("variant_id"),
+            "title": v.get("title") or "",
+            "price": v.get("price"),
+            "available": bool(v.get("available", True)),
+        }
+        for v in pl.get("variants", [])
+        if v.get("variant_id")
+    ]
+    if not variants:
+        return None
+    return {
+        "title": pl["title"],
+        "url": _pretty_url(pl.get("url")),
+        "image": pl.get("featured_image"),
+        "price_min": pl.get("price_min"),
+        "price_max": pl.get("price_max"),
+        "currency": pl.get("currency", "USD"),
+        "variants": variants,
+    }
 
 
 def _product_cards(hits: dict[str, Any], limit: int = 3) -> list[dict[str, Any]]:
-    """Tarjetas de producto para el widget: imagen, precio y variantes con su ID
-    numérico (para agregar al carrito vía la AJAX Cart API del storefront)."""
+    """Tarjetas de los productos recuperados por similitud (candidatos)."""
     cards: list[dict[str, Any]] = []
     for p in hits["products"][:limit]:
         if p["score"] < _settings.min_similarity:
             continue
-        pl = p["payload"]
-        variants = [
-            {
-                "id": v.get("variant_id"),
-                "title": v.get("title") or "",
-                "price": v.get("price"),
-                "available": bool(v.get("available", True)),
-            }
-            for v in pl.get("variants", [])
-            if v.get("variant_id")
-        ]
-        if not variants:
-            continue
-        cards.append({
-            "title": pl["title"],
-            "url": _pretty_url(pl.get("url")),
-            "image": pl.get("featured_image"),
-            "price_min": pl.get("price_min"),
-            "price_max": pl.get("price_max"),
-            "currency": pl.get("currency", "USD"),
-            "variants": variants,
-        })
+        card = _card_from_payload(p["payload"])
+        if card:
+            cards.append(card)
     return cards
+
+
+async def _cards_for_answer(
+    session: AsyncSession, hits: dict[str, Any], answer: str, limit: int = 3
+) -> list[dict[str, Any]]:
+    """Muestra una tarjeta (con botón Agregar al carrito) por CADA producto que el
+    asistente realmente enlazó en su respuesta. Incluye tanto los productos
+    recuperados por similitud como cualquier otro producto del catálogo cuyo enlace
+    aparezca en el texto (p. ej. el TG® 2K High Gloss Clear Coat que viene de una FAQ).
+    Si la respuesta no enlaza productos, no se muestra ninguna tarjeta."""
+    ans = (answer or "").lower()
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    # 1) Productos recuperados por similitud que además fueron enlazados/mencionados.
+    for c in _product_cards(hits, limit=_settings.top_k):
+        url = (c.get("url") or "").lower()
+        title = (c.get("title") or "").lower()
+        if (url and url in ans) or (title and title in ans):
+            key = _handle_of(c.get("url")) or title
+            if key not in seen:
+                out.append(c)
+                seen.add(key)
+
+    # 2) Cualquier producto enlazado por handle que no haya salido en la búsqueda.
+    linked = {h.lower() for h in _PRODUCT_HANDLE_RE.findall(answer or "")}
+    missing = [h for h in linked if h and h not in seen]
+    if missing:
+        try:
+            payloads = await vector_store.get_products_by_handles(session, missing)
+        except Exception:  # noqa: BLE001
+            payloads = []
+        for pl in payloads:
+            card = _card_from_payload(pl)
+            if not card:
+                continue
+            key = _handle_of(card.get("url")) or (card.get("title") or "").lower()
+            if key not in seen:
+                out.append(card)
+                seen.add(key)
+
+    return out[:limit]
