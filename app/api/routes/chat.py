@@ -121,6 +121,44 @@ async def contact(req: ContactRequest, session: AsyncSession = Depends(get_sessi
     return {"ok": True}
 
 
+@router.get("/admin/order-check")
+async def order_check(key: str = "", order: str = "", email: str = ""):
+    """Diagnóstico protegido: hace una llamada cruda a la Admin API de Shopify y
+    reporta el status para saber si el token/scope funcionan. No expone PII: en 200
+    solo devuelve el conteo; en error, el cuerpo del error (que no trae datos de cliente)."""
+    if not _settings.admin_token or key != _settings.admin_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
+    import httpx  # local para no tocar imports globales
+
+    tok = _settings.shopify_admin_token or ""
+    api = f"https://{_settings.shopify_shop_domain}/admin/api/{_settings.shopify_api_version}"
+    params: dict[str, str] = {"status": "any", "limit": "5"}
+    if order:
+        o = order.strip().lstrip("#")
+        params["name"] = f"#{o}"
+    if email:
+        params["email"] = email.strip()
+    out: dict = {
+        "shop": _settings.shopify_shop_domain,
+        "api_version": _settings.shopify_api_version,
+        "token_set": bool(tok),
+        "token_prefix": tok[:6],
+    }
+    try:
+        async with httpx.AsyncClient(
+            headers={"X-Shopify-Access-Token": tok}, timeout=20
+        ) as c:
+            r = await c.get(f"{api}/orders.json", params=params)
+        out["status_code"] = r.status_code
+        if r.status_code == 200:
+            out["count"] = len(r.json().get("orders", []))
+        else:
+            out["error_body"] = r.text[:300]
+    except Exception as e:  # noqa: BLE001
+        out["exception"] = str(e)[:300]
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Panel de supervisión: /admin/conversations?key=ADMIN_TOKEN
 # Lee (no modifica) las conversaciones para que el dueño vea qué responde el AI.
