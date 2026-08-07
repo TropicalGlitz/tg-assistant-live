@@ -223,15 +223,19 @@ def _next_link(link_header: str | None) -> str | None:
     return m.group(1) if m else None
 
 
-async def ai_attributed_orders(*, days: int = 60, max_pages: int = 3) -> dict[str, Any]:
-    """Órdenes recientes atribuibles al AI (atribución directa).
+async def ai_attributed_orders(
+    *, since: Any = None, until: Any = None, days: int = 60, max_pages: int = 4
+) -> dict[str, Any]:
+    """Órdenes atribuibles al AI (atribución directa) en un rango de fechas.
 
     Devuelve {"orders": [...], "truncated": bool}. Cada orden trae la sesión del
     chat, el total, los ítems, y `ai_revenue` = suma de los ítems que el cliente
     agregó desde el chat (si se conocen las variantes; si no, el total)."""
     api = f"https://{_settings.shopify_shop_domain}/admin/api/{_settings.shopify_api_version}"
     headers = {"X-Shopify-Access-Token": _settings.shopify_admin_token}
-    created_min = (_dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(days=days)).isoformat()
+    if since is None:
+        since = _dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(days=days)
+    created_min = since.isoformat()
     params = {
         "status": "any",
         "limit": "250",
@@ -241,6 +245,8 @@ async def ai_attributed_orders(*, days: int = 60, max_pages: int = 3) -> dict[st
             "cancelled_at,line_items,note_attributes,currency"
         ),
     }
+    if until is not None:
+        params["created_at_max"] = until.isoformat()
 
     collected: list[dict[str, Any]] = []
     truncated = False

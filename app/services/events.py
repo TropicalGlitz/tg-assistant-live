@@ -85,24 +85,55 @@ async def log_event(
         _log.exception("No se pudo registrar el evento (se ignora)")
 
 
-async def sessions_with_add_to_cart(session: AsyncSession) -> set[str]:
+async def sessions_with_add_to_cart(
+    session: AsyncSession, *, since: Any = None, until: Any = None
+) -> set[str]:
     """Conjunto de session_id que agregaron al menos un producto al carrito desde el chat."""
     await _ensure(session)
+    clause = ""
+    params: dict[str, Any] = {}
+    if since is not None and until is not None:
+        clause = "AND created_at >= :since AND created_at < :until"
+        params = {"since": since, "until": until}
     try:
         rows = (
             await session.execute(
                 text(
-                    """
+                    f"""
                     SELECT DISTINCT session_id FROM chat_events
-                    WHERE type = 'add_to_cart' AND session_id IS NOT NULL
+                    WHERE type = 'add_to_cart' AND session_id IS NOT NULL {clause}
                     """
-                )
+                ),
+                params,
             )
         ).all()
         return {r[0] for r in rows if r[0]}
     except Exception:  # noqa: BLE001
         _log.exception("No se pudo leer sesiones con add_to_cart")
         return set()
+
+
+async def daily_add_to_cart(session: AsyncSession, since: Any, until: Any) -> list[dict[str, Any]]:
+    """Serie diaria de eventos add_to_cart (para el gráfico de actividad)."""
+    await _ensure(session)
+    try:
+        rows = (
+            await session.execute(
+                text(
+                    """
+                    SELECT date_trunc('day', created_at)::date AS day, count(*) AS total
+                    FROM chat_events
+                    WHERE type = 'add_to_cart' AND created_at >= :since AND created_at < :until
+                    GROUP BY 1 ORDER BY 1
+                    """
+                ),
+                {"since": since, "until": until},
+            )
+        ).mappings().all()
+        return [dict(r) for r in rows]
+    except Exception:  # noqa: BLE001
+        _log.exception("No se pudo calcular daily_add_to_cart")
+        return []
 
 
 async def add_to_cart_items(session: AsyncSession, limit: int = 500) -> list[dict[str, Any]]:

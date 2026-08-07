@@ -95,14 +95,24 @@ async def log_exchange(
 
 
 async def fetch_recent(
-    session: AsyncSession, limit: int = 500, mode: str | None = None
+    session: AsyncSession,
+    limit: int = 500,
+    mode: str | None = None,
+    *,
+    since: Any = None,
+    until: Any = None,
 ) -> list[dict[str, Any]]:
     await _ensure(session)
-    where = ""
+    clauses: list[str] = []
     params: dict[str, Any] = {"limit": limit}
     if mode in ("handoff", "catalog", "general"):
-        where = "WHERE mode = :mode"
+        clauses.append("mode = :mode")
         params["mode"] = mode
+    if since is not None and until is not None:
+        clauses.append("created_at >= :since AND created_at < :until")
+        params["since"] = since
+        params["until"] = until
+    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     rows = (
         await session.execute(
             text(
@@ -118,6 +128,32 @@ async def fetch_recent(
         )
     ).mappings().all()
     return [dict(r) for r in rows]
+
+
+async def daily_series(session: AsyncSession, since: Any, until: Any) -> list[dict[str, Any]]:
+    """Serie diaria de conversaciones (total y derivadas a humano) para los gráficos."""
+    await _ensure(session)
+    try:
+        rows = (
+            await session.execute(
+                text(
+                    """
+                    SELECT date_trunc('day', created_at)::date AS day,
+                           count(*) AS total,
+                           count(*) FILTER (WHERE handoff) AS handoff
+                    FROM chat_logs
+                    WHERE created_at >= :since AND created_at < :until
+                    GROUP BY 1
+                    ORDER BY 1
+                    """
+                ),
+                {"since": since, "until": until},
+            )
+        ).mappings().all()
+        return [dict(r) for r in rows]
+    except Exception:  # noqa: BLE001
+        _log.exception("No se pudo calcular la serie diaria")
+        return []
 
 
 async def recent_history(
@@ -191,24 +227,31 @@ async def session_transcript(
     return msgs
 
 
-async def stats(session: AsyncSession) -> dict[str, int]:
+async def stats(
+    session: AsyncSession, *, since: Any = None, until: Any = None
+) -> dict[str, int]:
     await _ensure(session)
+    where = ""
+    params: dict[str, Any] = {}
+    if since is not None and until is not None:
+        where = "WHERE created_at >= :since AND created_at < :until"
+        params = {"since": since, "until": until}
     row = (
         await session.execute(
             text(
-                """
+                f"""
                 SELECT
                     count(*) AS total,
-                    count(*) FILTER (WHERE created_at > now() - interval '24 hours') AS last24h,
-                    count(*) FILTER (WHERE created_at > now() - interval '7 days') AS last7d,
                     count(DISTINCT session_id) AS sessions,
                     count(DISTINCT session_id) FILTER (WHERE handoff) AS handoff_sessions,
                     count(*) FILTER (WHERE mode = 'general') AS general,
                     count(*) FILTER (WHERE mode = 'handoff') AS handoff,
                     count(*) FILTER (WHERE mode = 'catalog') AS catalog
                 FROM chat_logs
+                {where}
                 """
-            )
+            ),
+            params,
         )
     ).mappings().first()
     return {k: int(v or 0) for k, v in dict(row).items()} if row else {}
