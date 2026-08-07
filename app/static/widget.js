@@ -229,7 +229,6 @@
             else {
               ai.innerHTML = mdToHtml(full);
               renderProducts(j.products);
-              if (j.sources && j.sources.length) { var s = add("src"); s.textContent = "Sources: " + j.sources.map(function (x) { return x.source + ":" + (x.ref || "").slice(0, 26); }).join(" · "); }
               chips(j.handoff ? ["Contact support", "Browse best sellers"] : ["Tell me more", "Any promotions?"]);
             }
           })();
