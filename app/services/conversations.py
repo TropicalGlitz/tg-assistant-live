@@ -157,6 +157,40 @@ async def recent_history(
     return msgs
 
 
+async def session_transcript(
+    session: AsyncSession, session_id: str | None, limit: int = 200
+) -> list[dict[str, str]]:
+    """Toda la conversación de esta sesión como pares user/assistant en orden
+    cronológico, para adjuntarla al email de contacto que recibe soporte."""
+    if not session_id:
+        return []
+    await _ensure(session)
+    try:
+        rows = (
+            await session.execute(
+                text(
+                    """
+                    SELECT message, answer FROM chat_logs
+                    WHERE session_id = :sid
+                    ORDER BY created_at ASC
+                    LIMIT :n
+                    """
+                ),
+                {"sid": session_id, "n": limit},
+            )
+        ).mappings().all()
+    except Exception:  # noqa: BLE001
+        _log.exception("No se pudo leer la transcripción de la sesión")
+        return []
+    msgs: list[dict[str, str]] = []
+    for r in rows:
+        if r.get("message"):
+            msgs.append({"role": "user", "content": r["message"]})
+        if r.get("answer"):
+            msgs.append({"role": "assistant", "content": r["answer"]})
+    return msgs
+
+
 async def stats(session: AsyncSession) -> dict[str, int]:
     await _ensure(session)
     row = (
