@@ -56,6 +56,16 @@
     '#tg-w .card .vc{font-size:11px;color:var(--tg);text-decoration:none;align-self:flex-start}' +
     '#tg-chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 8px}' +
     '#tg-w .chip{border:1px solid var(--tg);color:var(--tg);background:#fff;border-radius:999px;padding:7px 13px;font-size:13px;cursor:pointer}' +
+    '#tg-w .cform{align-self:stretch;background:#fff;border:1px solid #eee;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}' +
+    '#tg-w .cform h4{margin:0;font-size:14px;font-weight:800}' +
+    '#tg-w .cform .note{font-size:11px;color:var(--tgm);margin-top:-4px}' +
+    '#tg-w .cform .row{display:flex;gap:8px}' +
+    '#tg-w .cform input,#tg-w .cform textarea{width:100%;border:1px solid #e2e2e8;border-radius:10px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none}' +
+    '#tg-w .cform input:focus,#tg-w .cform textarea:focus{border-color:var(--tg)}' +
+    '#tg-w .cform textarea{resize:vertical;min-height:64px}' +
+    '#tg-w .cform .send{border:0;border-radius:999px;background:var(--tg);color:#fff;padding:10px;font-size:14px;font-weight:700;cursor:pointer}' +
+    '#tg-w .cform .send[disabled]{opacity:.6;cursor:default}' +
+    '#tg-w .cform .err{color:#d33;font-size:12px}' +
     '#tg-form{display:flex;gap:8px;padding:12px 14px;border-top:1px solid #eee;background:#fff}' +
     '#tg-form input{flex:1;border:1px solid #e2e2e8;border-radius:999px;padding:11px 16px;font-size:14px;outline:none}' +
     '#tg-form input:focus{border-color:var(--tg)}' +
@@ -118,7 +128,8 @@
     var greeted = false;
 
     function add(c, t) { var d = document.createElement("div"); d.className = c; if (t != null) d.textContent = t; log.appendChild(d); log.scrollTop = log.scrollHeight; return d; }
-    function chips(list) { C.innerHTML = ""; (list || []).forEach(function (t) { var b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.textContent = t; b.onclick = function () { ask(t); }; C.appendChild(b); }); }
+    function isContactChip(t) { return /talk to a human|contact a representative|contact support/i.test(t); }
+    function chips(list) { C.innerHTML = ""; (list || []).forEach(function (t) { var b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.textContent = t; b.onclick = function () { if (isContactChip(t)) openContact(); else ask(t); }; C.appendChild(b); }); }
 
     function addToCart(variantId, btn) {
       if (!variantId) return;
@@ -213,9 +224,63 @@
 
     function open() {
       P.dataset.open = "true"; L.setAttribute("aria-expanded", "true"); T.focus();
-      if (!greeted) { greeted = true; add("m ai", "Welcome back! How may I be of service to you today?"); chips(["Any promotions?", "Not sure what to choose", "How much paint do I need?"]); }
+      if (!greeted) { greeted = true; add("m ai", "Welcome back! How may I be of service to you today?"); chips(["Any promotions?", "How much paint do I need?", "Talk to a human"]); }
     }
     function close() { P.dataset.open = "false"; L.setAttribute("aria-expanded", "false"); L.focus(); }
+
+    // Formulario de contacto: el cliente deja sus datos + su pregunta y al enviar
+    // se manda un correo a support@ con toda la conversación para que un humano responda.
+    function openContact(prefill) {
+      if (P.dataset.open !== "true") open();
+      contactForm(prefill || "");
+    }
+
+    function contactForm(prefill) {
+      var box = document.createElement("div");
+      box.className = "cform";
+      box.innerHTML =
+        '<h4>Talk to a representative</h4>' +
+        '<div class="note">Leave your details and our team will email you back — your chat is included automatically.</div>' +
+        '<div class="row"><input id="cf-fn" placeholder="First name" autocomplete="given-name"><input id="cf-ln" placeholder="Last name" autocomplete="family-name"></div>' +
+        '<input id="cf-ph" placeholder="Phone number" autocomplete="tel" inputmode="tel">' +
+        '<input id="cf-em" type="email" placeholder="Email" autocomplete="email">' +
+        '<textarea id="cf-msg" placeholder="How can we help?"></textarea>' +
+        '<div class="err" id="cf-err" style="display:none"></div>' +
+        '<button class="send" id="cf-send" type="button">Send</button>';
+      log.appendChild(box);
+      log.scrollTop = log.scrollHeight;
+      if (prefill) box.querySelector("#cf-msg").value = prefill;
+      box.querySelector("#cf-fn").focus();
+      box.querySelector("#cf-send").onclick = function () { submitContact(box); };
+    }
+
+    function submitContact(box) {
+      var send = box.querySelector("#cf-send");
+      var errEl = box.querySelector("#cf-err");
+      var fn = box.querySelector("#cf-fn").value.trim();
+      var ln = box.querySelector("#cf-ln").value.trim();
+      var ph = box.querySelector("#cf-ph").value.trim();
+      var em = box.querySelector("#cf-em").value.trim();
+      var msg = box.querySelector("#cf-msg").value.trim();
+      function fail(t) { errEl.textContent = t; errEl.style.display = "block"; }
+      errEl.style.display = "none";
+      if (!fn) return fail("Please enter your first name.");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return fail("Please enter a valid email.");
+      if (!msg) return fail("Please tell us how we can help.");
+      send.disabled = true; send.textContent = "Sending…";
+      fetch(BACKEND + "/contact", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ first_name: fn, last_name: ln, phone: ph, email: em, message: msg, session_id: SID })
+      })
+        .then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+        .then(function () {
+          box.innerHTML = '<h4>Thanks, ' + esc(fn) + '!</h4><div class="note">We received your request along with your chat. A Tropical Glitz representative will email you at ' + esc(em) + ' shortly.</div>';
+        })
+        .catch(function () {
+          send.disabled = false; send.textContent = "Send";
+          fail("Sorry, we couldn't send that right now. Please email support@tropicalglitz.net or call 786-383-3013.");
+        });
+    }
 
     function ask(q) {
       if (!q || !q.trim()) return; C.innerHTML = ""; add("m u", q); T.value = "";
@@ -229,7 +294,7 @@
             else {
               ai.innerHTML = mdToHtml(full);
               renderProducts(j.products);
-              chips(j.handoff ? ["Contact support", "Browse best sellers"] : ["Tell me more", "Any promotions?"]);
+              chips(j.handoff ? ["Contact a representative", "Browse best sellers"] : ["Tell me more", "Any promotions?", "Talk to a human"]);
             }
           })();
         })
