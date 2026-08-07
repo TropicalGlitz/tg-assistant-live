@@ -131,7 +131,42 @@
     function isContactChip(t) { return /talk to a human|contact a representative|contact support/i.test(t); }
     function chips(list) { C.innerHTML = ""; (list || []).forEach(function (t) { var b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.textContent = t; b.onclick = function () { if (isContactChip(t)) openContact(); else ask(t); }; C.appendChild(b); }); }
 
-    function addToCart(variantId, btn) {
+    // Registra un evento ligero en el backend para el panel de control (embudo).
+    function logEvent(type, data) {
+      try {
+        fetch(BACKEND + "/event", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(Object.assign({ session_id: SID, type: type }, data || {})),
+          keepalive: true
+        }).catch(function () {});
+      } catch (e) {}
+    }
+
+    // Etiqueta el carrito de Shopify con la sesión del chat + las variantes que el
+    // cliente agregó DESDE la conversación. Esas etiquetas viajan a la orden como
+    // note_attributes, y así el panel atribuye la venta al AI (atribución directa).
+    function tagCart(variantId) {
+      try {
+        fetch("/cart.js")
+          .then(function (r) { return r.json(); })
+          .then(function (cart) {
+            var attrs = (cart && cart.attributes) || {};
+            var list = String(attrs._tg_ai_variants || "").split(",").filter(Boolean);
+            if (list.indexOf(String(variantId)) === -1) list.push(String(variantId));
+            return fetch("/cart/update.js", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                attributes: { _tg_ai: "1", _tg_ai_session: SID, _tg_ai_variants: list.join(",") }
+              })
+            });
+          })
+          .catch(function () {});
+      } catch (e) {}
+    }
+
+    function addToCart(variantId, btn, meta) {
       if (!variantId) return;
       btn.disabled = true;
       var original = btn.textContent;
@@ -143,6 +178,12 @@
       })
         .then(function (r) { if (!r.ok) throw new Error("cart"); return r.json(); })
         .then(function () {
+          tagCart(variantId);
+          logEvent("add_to_cart", {
+            title: (meta && meta.title) || "",
+            variant_id: String(variantId),
+            price: (meta && meta.price != null) ? Number(meta.price) : null
+          });
           btn.textContent = "✓ Added";
           btn.classList.add("ok");
           document.dispatchEvent(new CustomEvent("tg:cart-updated"));
@@ -212,7 +253,9 @@
         buy.className = "buy"; buy.type = "button"; buy.textContent = "Add to cart";
         buy.onclick = function () {
           var vid = sel ? sel.value : variants[0].id;
-          addToCart(vid, buy);
+          var price = variants[0].price;
+          if (sel) { var opt = sel.options[sel.selectedIndex]; if (opt) price = opt.getAttribute("data-price"); }
+          addToCart(vid, buy, { title: p.title || "", price: price });
         };
         info.appendChild(buy);
 
