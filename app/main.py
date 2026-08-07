@@ -28,7 +28,7 @@ async def _warmup() -> None:
     # Precarga el modelo de embeddings local para que la 1ª petición no espere la carga.
     import asyncio
 
-    from app.services import embeddings, kb_seed, public_ingest
+    from app.services import embeddings, kb_seed, policy_ingest, public_ingest
 
     try:
         await asyncio.to_thread(embeddings._get_model)
@@ -46,6 +46,14 @@ async def _warmup() -> None:
     # técnica) en segundo plano: idempotente, solo inserta lo que falte.
     try:
         asyncio.create_task(kb_seed.run_seed())
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Ingiere las políticas del sitio (envíos, devoluciones, FAQ) al KB en segundo
+    # plano: corre una sola vez si aún no están cargadas. Así el AI responde tiempos
+    # de envío y políticas desde el contenido real del sitio.
+    try:
+        asyncio.create_task(policy_ingest.run_if_missing())
     except Exception:  # noqa: BLE001
         pass
 
