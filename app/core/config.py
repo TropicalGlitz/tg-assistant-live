@@ -43,6 +43,16 @@ class Settings(BaseSettings):
     # deshabilita (responde 401). Poner un valor secreto propio en Render.
     admin_token: str = ""
 
+    # --- Contacto / handoff por email (Resend) ---
+    # API key de resend.com. Si queda vacío, /contact responde 503 y el widget
+    # muestra el email/teléfono como alternativa. Poner en Render como RESEND_API_KEY.
+    resend_api_key: str = ""
+    # Remitente. Debe ser una dirección de un dominio verificado en Resend
+    # (p. ej. "Tropical Glitz <assistant@tropicalglitz.net>"). Override: CONTACT_FROM_EMAIL.
+    contact_from_email: str = "Tropical Glitz Assistant <onboarding@resend.dev>"
+    # Destino: bandeja del equipo de soporte. Override: CONTACT_TO_EMAIL.
+    contact_to_email: str = "support@tropicalglitz.net"
+
 
 @lru_cache
 def get_settings() -> Settings:
