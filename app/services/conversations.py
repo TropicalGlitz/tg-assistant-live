@@ -200,6 +200,9 @@ async def stats(session: AsyncSession) -> dict[str, int]:
                 SELECT
                     count(*) AS total,
                     count(*) FILTER (WHERE created_at > now() - interval '24 hours') AS last24h,
+                    count(*) FILTER (WHERE created_at > now() - interval '7 days') AS last7d,
+                    count(DISTINCT session_id) AS sessions,
+                    count(DISTINCT session_id) FILTER (WHERE handoff) AS handoff_sessions,
                     count(*) FILTER (WHERE mode = 'general') AS general,
                     count(*) FILTER (WHERE mode = 'handoff') AS handoff,
                     count(*) FILTER (WHERE mode = 'catalog') AS catalog

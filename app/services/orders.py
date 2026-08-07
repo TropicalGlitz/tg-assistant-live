@@ -8,6 +8,7 @@ se informa y se ofrece contacto.
 """
 from __future__ import annotations
 
+import datetime as _dt
 import re
 from typing import Any
 
@@ -17,6 +18,7 @@ from app.core.config import get_settings
 
 _settings = get_settings()
 _ORDER_RE = re.compile(r"#?(\d{3,})")
+_NEXT_LINK_RE = re.compile(r"<([^>]+)>\s*;\s*rel=\"next\"")
 
 
 def looks_like_order_query(text: str) -> bool:
@@ -194,3 +196,104 @@ async def search_orders(
             if len(out) >= limit:
                 break
         return out[:limit]
+
+
+# ---------------------------------------------------------------------------
+# Atribución de ventas al AI (panel de control).
+# El widget etiqueta el carrito con `_tg_ai_session` (la sesión del chat) y
+# `_tg_ai_variants` (las variantes que el cliente agregó DESDE la conversación).
+# Esas etiquetas viajan a la orden como `note_attributes`. Aquí leemos las
+# órdenes recientes y quedamos con las que traen esa marca -> ventas del AI.
+# ---------------------------------------------------------------------------
+
+
+def _note_attr_map(o: dict[str, Any]) -> dict[str, str]:
+    m: dict[str, str] = {}
+    for na in (o.get("note_attributes") or []):
+        name = na.get("name")
+        if name:
+            m[name] = na.get("value")
+    return m
+
+
+def _next_link(link_header: str | None) -> str | None:
+    if not link_header:
+        return None
+    m = _NEXT_LINK_RE.search(link_header)
+    return m.group(1) if m else None
+
+
+async def ai_attributed_orders(*, days: int = 60, max_pages: int = 3) -> dict[str, Any]:
+    """Órdenes recientes atribuibles al AI (atribución directa).
+
+    Devuelve {"orders": [...], "truncated": bool}. Cada orden trae la sesión del
+    chat, el total, los ítems, y `ai_revenue` = suma de los ítems que el cliente
+    agregó desde el chat (si se conocen las variantes; si no, el total)."""
+    api = f"https://{_settings.shopify_shop_domain}/admin/api/{_settings.shopify_api_version}"
+    headers = {"X-Shopify-Access-Token": _settings.shopify_admin_token}
+    created_min = (_dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(days=days)).isoformat()
+    params = {
+        "status": "any",
+        "limit": "250",
+        "created_at_min": created_min,
+        "fields": (
+            "id,name,created_at,total_price,current_total_price,financial_status,"
+            "cancelled_at,line_items,note_attributes,currency"
+        ),
+    }
+
+    collected: list[dict[str, Any]] = []
+    truncated = False
+    async with httpx.AsyncClient(headers=headers, timeout=30) as client:
+        r = await client.get(f"{api}/orders.json", params=params)
+        r.raise_for_status()
+        collected.extend(r.json().get("orders", []))
+        link = r.headers.get("link", "")
+        pages = 1
+        while pages < max_pages:
+            nxt = _next_link(link)
+            if not nxt:
+                break
+            r = await client.get(nxt)  # la URL del cursor ya trae limit/page_info
+            r.raise_for_status()
+            collected.extend(r.json().get("orders", []))
+            link = r.headers.get("link", "")
+            pages += 1
+        if _next_link(link):
+            truncated = True  # hay más órdenes de las que trajimos
+
+    out: list[dict[str, Any]] = []
+    for o in collected:
+        na = _note_attr_map(o)
+        sid = na.get("_tg_ai_session")
+        if not sid and na.get("_tg_ai") != "1":
+            continue
+        ai_variants = {v for v in (na.get("_tg_ai_variants") or "").split(",") if v}
+        cancelled = bool(o.get("cancelled_at"))
+        total = float(o.get("current_total_price") or o.get("total_price") or 0)
+        direct = 0.0
+        items: list[dict[str, Any]] = []
+        for li in (o.get("line_items") or []):
+            vid = str(li.get("variant_id"))
+            line_total = float(li.get("price") or 0) * int(li.get("quantity") or 0)
+            is_ai = (vid in ai_variants) if ai_variants else True
+            if is_ai:
+                direct += line_total
+            items.append(
+                {"title": li.get("title"), "qty": li.get("quantity"), "variant_id": vid, "ai": is_ai}
+            )
+        out.append(
+            {
+                "order": o.get("name"),
+                "session_id": sid,
+                "created_at": (o.get("created_at") or "")[:10],
+                "total": total,
+                "ai_revenue": round(direct, 2),
+                "currency": o.get("currency") or "USD",
+                "financial_status": o.get("financial_status"),
+                "cancelled": cancelled,
+                "items": items,
+            }
+        )
+    out.sort(key=lambda x: x["created_at"], reverse=True)
+    return {"orders": out, "truncated": truncated}
