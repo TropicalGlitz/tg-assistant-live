@@ -47,8 +47,10 @@ def _needs_escalation(query: str) -> bool:
 
 def _contact_block() -> str:
     return (
-        f"I'm sorry, I don't have that information right now. Please contact our team: "
-        f"email {CONTACT['email']} or call {CONTACT['phone']} ({CONTACT['hours']})."
+        "I'm sorry, I don't have the information you're looking for at the moment. "
+        "Please visit the FAQ section on our website for more information, or contact our "
+        f"support team for further assistance — email {CONTACT['email']} or call "
+        f"{CONTACT['phone']} ({CONTACT['hours']})."
     )
 
 
