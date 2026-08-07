@@ -148,6 +148,21 @@ async def event(req: EventRequest, session: AsyncSession = Depends(get_session))
     return {"ok": True}
 
 
+@router.get("/admin/ingest-kb")
+async def ingest_kb(key: str = ""):
+    """(Re)ingiere las páginas de políticas/FAQ del sitio a la base de conocimiento.
+    Úsalo tras actualizar una política para que el AI responda con lo más reciente."""
+    if not _settings.admin_token or key != _settings.admin_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
+    from app.services import policy_ingest
+
+    try:
+        result = await policy_ingest.run()
+        return {"ok": True, "ingested": result}
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)[:300])
+
+
 # ---------------------------------------------------------------------------
 # Panel de supervisión: /admin/conversations?key=ADMIN_TOKEN
 # Lee (no modifica) las conversaciones para que el dueño vea qué responde el AI.
