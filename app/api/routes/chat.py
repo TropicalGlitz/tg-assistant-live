@@ -8,12 +8,14 @@ Dos vías:
 """
 from __future__ import annotations
 
+import datetime as _dt
 import json
+import math
 from pathlib import Path
 
 import html
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -207,6 +209,22 @@ def _admin_page(title: str, body: str) -> str:
         ".badge.sale{background:#dcfce7;color:#166534}.badge.cart{background:#ede9fe;color:#6d28d9}"
         ".badge.human{background:#fef3c7;color:#92400e}.badge.ai{background:#dbeafe;color:#1e40af}"
         ".note{font-size:12px;color:#9a9aa2;margin-top:8px}"
+        ".daterow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}"
+        ".daterow form{display:flex;gap:6px;align-items:center;margin:0}"
+        ".daterow input[type=date]{border:1px solid #d7d7de;border-radius:8px;padding:6px 8px;font-size:13px}"
+        ".daterow .apply{border:0;background:#ef2c8f;color:#fff;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer}"
+        ".presets{display:flex;gap:6px}"
+        ".presets a{font-size:12px;text-decoration:none;border:1px solid #d7d7de;border-radius:999px;padding:6px 12px;color:#1b1b1f;background:#fff}"
+        ".presets a.on{background:#1b1b1f;color:#fff;border-color:#1b1b1f}"
+        ".rangelbl{font-size:12px;color:#6b6b74;margin-left:auto}"
+        ".kpi .delta{font-size:11px;margin-top:3px}.kpi .delta.up{color:#12b76a}.kpi .delta.down{color:#e11d48}"
+        ".kpi.money .delta.up,.kpi.money .delta.down{color:#ffd9ec}"
+        ".charts{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:18px}"
+        "@media(max-width:720px){.charts{grid-template-columns:1fr}}"
+        ".donut{display:flex;align-items:center;gap:14px;flex-wrap:wrap}"
+        ".legend{display:flex;flex-direction:column;gap:6px}"
+        ".lg{font-size:12px;color:#4a4a52;display:flex;align-items:center;gap:6px}"
+        ".dot{width:10px;height:10px;border-radius:3px;display:inline-block}"
         "</style></head><body><div class='wrap'>"
         + body
         + "</div></body></html>"
@@ -251,7 +269,116 @@ def _fbar(a: int, b: int) -> int:
     return int(560 * a / b) if b else 2
 
 
-def _render_dashboard(rows, st, ev, atc_sessions, ai, key, f) -> str:
+_UTC = _dt.timezone.utc
+_PRESETS = {"7d": 7, "30d": 30, "90d": 90, "all": 3650}
+
+
+def _resolve_range(frm: str, to: str, rng: str):
+    """Devuelve (since, until, prev_since, prev_until, key) a partir de los
+    parámetros del calendario (from/to) o de un preset (7d/30d/90d/all)."""
+    today = _dt.datetime.now(_UTC).date()
+    since = until = None
+    key = rng if rng in _PRESETS else ""
+    if frm and to:
+        try:
+            d1 = _dt.date.fromisoformat(frm)
+            d2 = _dt.date.fromisoformat(to)
+            if d2 < d1:
+                d1, d2 = d2, d1
+            since = _dt.datetime.combine(d1, _dt.time.min, tzinfo=_UTC)
+            until = _dt.datetime.combine(d2, _dt.time.min, tzinfo=_UTC) + _dt.timedelta(days=1)
+            key = "custom"
+        except ValueError:
+            since = until = None
+    if since is None:
+        n = _PRESETS.get(rng or "30d", 30)
+        key = rng if rng in _PRESETS else "30d"
+        until = _dt.datetime.combine(today, _dt.time.min, tzinfo=_UTC) + _dt.timedelta(days=1)
+        since = until - _dt.timedelta(days=n)
+    period = until - since
+    return since, until, since - period, since, key
+
+
+def _delta_html(cur: float, prev: float) -> str:
+    """Pequeño indicador de cambio vs. período anterior."""
+    if prev <= 0:
+        if cur > 0:
+            return "<div class='delta up'>▲ nuevo</div>"
+        return "<div class='delta' style='color:#b8b8c2'>—</div>"
+    pct = (cur - prev) / prev * 100.0
+    if abs(pct) < 0.05:
+        return "<div class='delta' style='color:#b8b8c2'>0%</div>"
+    up = pct > 0
+    arrow = "▲" if up else "▼"
+    return f"<div class='delta {'up' if up else 'down'}'>{arrow} {abs(pct):.0f}% vs. anterior</div>"
+
+
+def _bar_chart(points: list, color: str = "#ef2c8f", height: int = 150) -> str:
+    """Gráfico de barras en SVG (autocontenido). points: lista de (etiqueta, valor)."""
+    points = [(str(lbl), int(v or 0)) for lbl, v in points]
+    if not points:
+        return "<div class='note'>Sin datos en este rango.</div>"
+    maxv = max((v for _, v in points), default=0) or 1
+    W = 680
+    pad_b, pad_t = 22, 12
+    n = len(points)
+    slot = W / n
+    bw = max(slot * 0.62, 1.0)
+    bars = ""
+    for i, (lbl, v) in enumerate(points):
+        bh = (v / maxv) * (height - pad_b - pad_t)
+        x = i * slot + (slot - bw) / 2
+        y = height - pad_b - bh
+        bars += (
+            f"<rect x='{x:.1f}' y='{y:.1f}' width='{bw:.1f}' height='{bh:.1f}' rx='2' "
+            f"fill='{color}'><title>{html.escape(lbl)}: {v}</title></rect>"
+        )
+    first, last = points[0][0], points[-1][0]
+    axis = (
+        f"<text x='0' y='{height - 6}' font-size='10' fill='#9a9aa2'>{html.escape(first)}</text>"
+        f"<text x='{W}' y='{height - 6}' font-size='10' fill='#9a9aa2' text-anchor='end'>{html.escape(last)}</text>"
+        f"<text x='0' y='10' font-size='10' fill='#9a9aa2'>máx {maxv}</text>"
+    )
+    return (
+        f"<svg viewBox='0 0 {W} {height}' style='width:100%;height:auto' "
+        f"role='img'>{bars}{axis}</svg>"
+    )
+
+
+def _donut(parts: list, size: int = 150) -> str:
+    """Dona en SVG. parts: lista de (etiqueta, valor, color)."""
+    parts = [(lbl, int(v or 0), col) for lbl, v, col in parts]
+    total = sum(v for _, v, _ in parts)
+    r = 52.0
+    c = size / 2.0
+    circ = 2 * math.pi * r
+    segs = ""
+    off = 0.0
+    denom = total or 1
+    for lbl, v, col in parts:
+        seg = (v / denom) * circ
+        segs += (
+            f"<circle cx='{c}' cy='{c}' r='{r}' fill='none' stroke='{col}' stroke-width='20' "
+            f"stroke-dasharray='{seg:.2f} {circ - seg:.2f}' stroke-dashoffset='{-off:.2f}' "
+            f"transform='rotate(-90 {c} {c})'><title>{html.escape(lbl)}: {v}</title></circle>"
+        )
+        off += seg
+    center = (
+        f"<text x='{c}' y='{c}' font-size='20' font-weight='700' text-anchor='middle' "
+        f"dominant-baseline='central'>{total}</text>"
+    )
+    svg = f"<svg viewBox='0 0 {size} {size}' width='{size}' height='{size}'>{segs}{center}</svg>"
+    legend = "".join(
+        f"<div class='lg'><span class='dot' style='background:{col}'></span>{html.escape(lbl)} · {v}</div>"
+        for lbl, v, col in parts
+    )
+    return f"<div class='donut'>{svg}<div class='legend'>{legend}</div></div>"
+
+
+def _render_dashboard(
+    rows, cur, prev, atc_cur, atc_prev_count, ai, prev_ai,
+    daily_conv, daily_atc, key, f, since, until, range_key,
+) -> str:
     ai_orders = [o for o in ai.get("orders", []) if not o.get("cancelled")]
     purchased_sessions = {o["session_id"] for o in ai_orders if o.get("session_id")}
     session_rev: dict[str, float] = {}
@@ -260,27 +387,94 @@ def _render_dashboard(rows, st, ev, atc_sessions, ai, key, f) -> str:
         if sid:
             session_rev[sid] = session_rev.get(sid, 0.0) + float(o.get("ai_revenue") or 0)
 
-    total_sessions = int(st.get("sessions", 0))
-    handoff_sessions = int(st.get("handoff_sessions", 0))
+    total_sessions = int(cur.get("sessions", 0))
+    handoff_sessions = int(cur.get("handoff_sessions", 0))
     resolved_sessions = max(total_sessions - handoff_sessions, 0)
-    atc_count = len(atc_sessions)
+    prev_resolved = max(int(prev.get("sessions", 0)) - int(prev.get("handoff_sessions", 0)), 0)
+    atc_count = len(atc_cur)
     purchased_count = len(purchased_sessions)
     ai_revenue = sum(float(o.get("ai_revenue") or 0) for o in ai_orders)
 
-    # --- KPIs ---
+    from_val = since.date().isoformat()
+    to_val = (until - _dt.timedelta(days=1)).date().isoformat()
+
+    # --- Rango de fechas: presets + calendario ---
+    def _range_qs() -> str:
+        if range_key == "custom":
+            return f"&from={from_val}&to={to_val}"
+        return f"&range={html.escape(range_key)}"
+
+    kf = html.escape(key)
+    presets = "".join(
+        f"<a class='{'on' if range_key == pk else ''}' "
+        f"href='?key={kf}&range={pk}{('&f=' + html.escape(f)) if f else ''}'>{lbl}</a>"
+        for pk, lbl in [("7d", "7 días"), ("30d", "30 días"), ("90d", "90 días"), ("all", "Todo")]
+    )
+    fhidden = f"<input type='hidden' name='f' value='{html.escape(f)}'>" if f else ""
+    date_control = (
+        "<div class='daterow'>"
+        f"<div class='presets'>{presets}</div>"
+        "<form method='get'>"
+        f"<input type='hidden' name='key' value='{kf}'>{fhidden}"
+        f"<input type='date' name='from' value='{from_val}'>"
+        f"<input type='date' name='to' value='{to_val}'>"
+        "<button class='apply' type='submit'>Aplicar</button>"
+        "</form>"
+        f"<span class='rangelbl'>{from_val} → {to_val}</span>"
+        "</div>"
+    )
+
+    # --- KPIs con comparación vs. período anterior ---
     kpis = [
-        ("kpi", str(st.get("total", 0)), "Conversaciones"),
-        ("kpi", str(total_sessions), "Clientes únicos"),
-        ("kpi", str(st.get("last24h", 0)), "Últimas 24 h"),
-        ("kpi good", str(resolved_sessions), "Resueltas por AI"),
-        ("kpi warn", str(handoff_sessions), "Pidió humano / email"),
-        ("kpi", str(atc_count), "Agregaron al carrito"),
-        ("kpi", str(len(ai_orders)), "Ventas del AI"),
-        ("kpi money", _money(ai_revenue), "Ingresos del AI"),
+        ("kpi", str(cur.get("total", 0)), "Conversaciones", _delta_html(cur.get("total", 0), prev.get("total", 0))),
+        ("kpi", str(total_sessions), "Clientes únicos", _delta_html(total_sessions, prev.get("sessions", 0))),
+        ("kpi good", str(resolved_sessions), "Resueltas por AI", _delta_html(resolved_sessions, prev_resolved)),
+        ("kpi warn", str(handoff_sessions), "Pidió humano / email", _delta_html(handoff_sessions, prev.get("handoff_sessions", 0))),
+        ("kpi", str(atc_count), "Agregaron al carrito", _delta_html(atc_count, atc_prev_count)),
+        ("kpi", str(len(ai_orders)), "Ventas del AI", _delta_html(len(ai_orders), prev_ai.get("count", 0))),
+        ("kpi money", _money(ai_revenue), "Ingresos del AI", _delta_html(ai_revenue, prev_ai.get("revenue", 0))),
     ]
     kpi_html = "".join(
-        f"<div class='{cls}'><b>{html.escape(val)}</b><span>{lbl}</span></div>"
-        for cls, val, lbl in kpis
+        f"<div class='{cls}'><b>{html.escape(val)}</b><span>{lbl}</span>{delta}</div>"
+        for cls, val, lbl, delta in kpis
+    )
+
+    # --- Gráficos (SVG autocontenido) ---
+    def _fill(series, value_key):
+        m = {d["day"]: int(d.get(value_key, 0) or 0) for d in series}
+        start = since.date()
+        end = (until - _dt.timedelta(days=1)).date()
+        span = (end - start).days + 1
+        if 0 < span <= 92:
+            out = []
+            day = start
+            while day <= end:
+                out.append((day.isoformat()[5:], m.get(day, 0)))
+                day += _dt.timedelta(days=1)
+            return out
+        # Rango grande: usar solo días con actividad (últimos 92).
+        pts = [(str(d["day"])[5:], int(d.get(value_key, 0) or 0)) for d in series]
+        return pts[-92:]
+
+    conv_points = _fill(daily_conv, "total")
+    conv_chart = _bar_chart(conv_points, color="#ef2c8f")
+    donut = _donut([
+        ("Resueltas por AI", resolved_sessions, "#12b76a"),
+        ("Pidió humano", handoff_sessions, "#f59e0b"),
+    ])
+    atc_points = _fill(daily_atc, "total")
+    atc_total = sum(v for _, v in atc_points)
+    atc_chart = (
+        _bar_chart(atc_points, color="#a855f7")
+        if atc_total > 0
+        else "<div class='note'>Aún no hay datos de carrito en este rango.</div>"
+    )
+    charts_html = (
+        "<div class='charts'>"
+        "<div class='sec'><h2>Conversaciones por día</h2>" + conv_chart + "</div>"
+        "<div class='sec'><h2>Resueltas por AI vs. humano</h2>" + donut + "</div>"
+        "</div>"
+        "<div class='sec'><h2>Agregados al carrito por día</h2>" + atc_chart + "</div>"
     )
 
     # --- Embudo ---
@@ -329,7 +523,7 @@ def _render_dashboard(rows, st, ev, atc_sessions, ai, key, f) -> str:
 
     # --- Filtros ---
     def q(val: str) -> str:
-        base = f"?key={html.escape(key)}"
+        base = f"?key={kf}{_range_qs()}"
         return base + (f"&f={val}" if val else "")
 
     filters = "".join(
@@ -357,7 +551,7 @@ def _render_dashboard(rows, st, ev, atc_sessions, ai, key, f) -> str:
     for sid in order:
         exs_desc = groups[sid]
         has_handoff = any(r.get("handoff") for r in exs_desc)
-        in_cart = sid in atc_sessions
+        in_cart = sid in atc_cur
         sold = sid in purchased_sessions
         # Aplica el filtro seleccionado.
         if f == "resolved" and has_handoff:
@@ -406,7 +600,9 @@ def _render_dashboard(rows, st, ev, atc_sessions, ai, key, f) -> str:
     body = (
         "<h1>Panel de control · Tropical Glitz AI</h1>"
         "<div class='sub'>Métricas y conversaciones del asistente (se actualiza al recargar)</div>"
+        f"{date_control}"
         f"<div class='kpis'>{kpi_html}</div>"
+        f"{charts_html}"
         f"<div class='sec'><h2>Embudo de conversión</h2><div class='funnel'>{funnel_html}</div></div>"
         f"<div class='sec'><h2>Ventas generadas por el AI</h2>{sales_html}</div>"
         "<h2 style='font-size:16px;margin:0 0 10px'>Conversaciones</h2>"
@@ -418,7 +614,12 @@ def _render_dashboard(rows, st, ev, atc_sessions, ai, key, f) -> str:
 
 @router.get("/admin/conversations", response_class=HTMLResponse)
 async def admin_conversations(
-    key: str = "", f: str = "", mode: str = "", session: AsyncSession = Depends(get_session)
+    key: str = "",
+    f: str = "",
+    rng: str = Query("30d", alias="range"),
+    frm: str = Query("", alias="from"),
+    to: str = "",
+    session: AsyncSession = Depends(get_session),
 ) -> HTMLResponse:
     if not _settings.admin_token:
         return HTMLResponse(
@@ -431,15 +632,38 @@ async def admin_conversations(
             _admin_locked("Token inválido o ausente. Abre esta página con ?key=TU_TOKEN al final de la URL."),
             status_code=401,
         )
-    st = await conversations.stats(session)
-    rows = await conversations.fetch_recent(session, limit=1000, mode=None)
-    ev = await events.stats(session)
-    atc_sessions = await events.sessions_with_add_to_cart(session)
+    since, until, prev_since, prev_until, range_key = _resolve_range(frm, to, rng)
+    cur = await conversations.stats(session, since=since, until=until)
+    prev = await conversations.stats(session, since=prev_since, until=prev_until)
+    rows = await conversations.fetch_recent(session, limit=1000, mode=None, since=since, until=until)
+    atc_cur = await events.sessions_with_add_to_cart(session, since=since, until=until)
+    atc_prev = await events.sessions_with_add_to_cart(session, since=prev_since, until=prev_until)
+    daily_conv = await conversations.daily_series(session, since, until)
+    daily_atc = await events.daily_add_to_cart(session, since, until)
     try:
-        ai = await orders.ai_attributed_orders(days=90)
+        ai_all = await orders.ai_attributed_orders(since=prev_since, until=until)
     except Exception:  # noqa: BLE001
-        ai = {"orders": [], "truncated": False, "error": True}
-    return HTMLResponse(_render_dashboard(rows, st, ev, atc_sessions, ai, key, (f or "")))
+        ai_all = {"orders": [], "truncated": False, "error": True}
+
+    since_day = since.date().isoformat()
+    all_orders = ai_all.get("orders", [])
+    cur_orders = [o for o in all_orders if str(o.get("created_at", "")) >= since_day]
+    prev_orders = [o for o in all_orders if str(o.get("created_at", "")) < since_day]
+    ai_cur = {
+        "orders": cur_orders,
+        "truncated": ai_all.get("truncated", False),
+        "error": ai_all.get("error", False),
+    }
+    prev_ai = {
+        "count": len([o for o in prev_orders if not o.get("cancelled")]),
+        "revenue": sum(float(o.get("ai_revenue") or 0) for o in prev_orders if not o.get("cancelled")),
+    }
+    return HTMLResponse(
+        _render_dashboard(
+            rows, cur, prev, atc_cur, len(atc_prev), ai_cur, prev_ai,
+            daily_conv, daily_atc, key, (f or ""), since, until, range_key,
+        )
+    )
 
 
 @router.get("/apps/assistant")
