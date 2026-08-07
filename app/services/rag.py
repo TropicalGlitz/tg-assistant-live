@@ -132,6 +132,14 @@ def _user_turn(context: str, query: str, grounded: bool) -> str:
     return f"CONTEXT (retrieved from store catalog/FAQs/guides):\n{ctx}\n\nGROUNDING: {strength}\n\nCUSTOMER: {query}"
 
 
+def _order_args(inp: dict[str, Any] | None) -> dict[str, str]:
+    """Saneo de los argumentos que Claude pasa a lookup_order: solo claves conocidas
+    y valores string no vacíos."""
+    inp = inp or {}
+    keys = ("order_number", "email", "phone", "first_name", "last_name")
+    return {k: str(inp[k]).strip() for k in keys if inp.get(k)}
+
+
 async def answer_query(
     session: AsyncSession,
     query: str,
@@ -140,10 +148,6 @@ async def answer_query(
 ) -> dict[str, Any]:
     if _needs_escalation(query):
         return {"answer": _contact_block(), "handoff": True, "sources": []}
-
-    order_reply = await handle_order_intent(query)
-    if order_reply is not None:
-        return {"answer": order_reply, "handoff": False, "sources": [{"source": "shopify", "ref": "orders"}]}
 
     hits = await retrieve(session, query, max_price=max_price)
     grounded = hits["best_score"] >= CONFIDENCE_THRESHOLD
@@ -155,13 +159,42 @@ async def answer_query(
     # Incluimos el historial de la sesión para que CONTINÚE la conversación.
     context = build_context(hits)
     messages = list(history or []) + [{"role": "user", "content": _user_turn(context, query, grounded)}]
+
+    # Tool-use: el asistente puede consultar el estado REAL de una orden en Shopify
+    # llamando a lookup_order con lo que el cliente le dé (número, email, teléfono o nombre).
     msg = await _llm.messages.create(
         model=_settings.llm_model,
         max_tokens=_settings.llm_max_tokens,
         system=SYSTEM_PROMPT,
         messages=messages,
+        tools=[orders.ORDER_TOOL],
     )
-    answer = "".join(b.text for b in msg.content if b.type == "text")
+    rounds = 0
+    while getattr(msg, "stop_reason", None) == "tool_use" and rounds < 3:
+        rounds += 1
+        messages.append({"role": "assistant", "content": msg.content})
+        tool_results: list[dict[str, Any]] = []
+        for block in msg.content:
+            if getattr(block, "type", None) == "tool_use" and block.name == "lookup_order":
+                try:
+                    found = await orders.search_orders(**_order_args(block.input))
+                    payload: dict[str, Any] = {"orders": found}
+                except Exception:  # noqa: BLE001
+                    payload = {"error": "lookup_failed"}
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "content": json.dumps(payload, ensure_ascii=False, default=str),
+                })
+        messages.append({"role": "user", "content": tool_results})
+        msg = await _llm.messages.create(
+            model=_settings.llm_model,
+            max_tokens=_settings.llm_max_tokens,
+            system=SYSTEM_PROMPT,
+            messages=messages,
+            tools=[orders.ORDER_TOOL],
+        )
+    answer = "".join(b.text for b in msg.content if getattr(b, "type", None) == "text")
     # Solo mostramos tarjetas de los productos que el asistente REALMENTE
     # enlazó en su respuesta (incluye productos de catálogo enlazados desde una FAQ).
     cards = await _cards_for_answer(session, hits, answer)
