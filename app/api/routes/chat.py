@@ -23,7 +23,7 @@ from fastapi import Response
 from app.core.config import get_settings
 from app.core.security import verify_app_proxy_signature
 from app.db.session import get_session
-from app.services import conversations, proactive, rag
+from app.services import conversations, mailer, proactive, rag
 
 router = APIRouter(tags=["chat"])
 _settings = get_settings()
@@ -75,6 +75,50 @@ async def chat(req: ChatRequest, session: AsyncSession = Depends(get_session)):
         sources=result.get("sources"),
     )
     return result
+
+
+class ContactRequest(BaseModel):
+    first_name: str = Field(..., min_length=1, max_length=80)
+    last_name: str = Field("", max_length=80)
+    phone: str = Field("", max_length=40)
+    email: str = Field(..., min_length=3, max_length=160)
+    message: str = Field(..., min_length=1, max_length=4000)
+    session_id: str | None = None
+
+
+@router.post("/contact")
+async def contact(req: ContactRequest, session: AsyncSession = Depends(get_session)):
+    """El cliente pide hablar con un representante: se envía un correo a soporte
+    con sus datos + su pregunta + toda la conversación. Además se registra el lead
+    en el panel para no perderlo aunque el email falle."""
+    transcript = await conversations.session_transcript(session, req.session_id)
+
+    name = f"{req.first_name} {req.last_name}".strip()
+    await conversations.log_exchange(
+        session,
+        session_id=req.session_id,
+        message=f"[Contact request] {name} · {req.email} · {req.phone or 'no phone'}",
+        answer=req.message,
+        handoff=True,
+        sources=None,
+    )
+
+    ok, err = await mailer.send_contact_email(
+        first_name=req.first_name,
+        last_name=req.last_name,
+        phone=req.phone,
+        email=req.email,
+        message=req.message,
+        transcript=transcript,
+    )
+    if not ok:
+        code = (
+            status.HTTP_503_SERVICE_UNAVAILABLE
+            if err == "email_not_configured"
+            else status.HTTP_502_BAD_GATEWAY
+        )
+        raise HTTPException(status_code=code, detail=err or "send_failed")
+    return {"ok": True}
 
 
 # ---------------------------------------------------------------------------
