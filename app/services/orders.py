@@ -84,19 +84,15 @@ ORDER_TOOL: dict[str, Any] = {
         "Look up a customer's order(s) in the Tropical Glitz store to tell them the "
         "status: whether it has shipped, is still being prepared, and the tracking "
         "number/link. Call this whenever a customer asks about an order, delivery, "
-        "shipping or tracking (e.g. 'where is my order'). Prefer the order number "
-        "(like 1234). If the customer doesn't know it, you may search by the email used "
-        "at checkout, or by phone, or by first and last name. Provide at least one "
-        "identifier. Only report what this tool returns — never invent order data."
+        "shipping or tracking (e.g. 'where is my order'). Identify the order by its order "
+        "number (like 1234) or by the email used at checkout — provide at least one of "
+        "them. Only report what this tool returns — never invent order data."
     ),
     "input_schema": {
         "type": "object",
         "properties": {
             "order_number": {"type": "string", "description": "Order number, e.g. 1234 or #1234"},
             "email": {"type": "string", "description": "Email used at checkout"},
-            "phone": {"type": "string", "description": "Customer phone number"},
-            "first_name": {"type": "string"},
-            "last_name": {"type": "string"},
         },
     },
 }
