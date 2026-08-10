@@ -28,7 +28,7 @@ async def _warmup() -> None:
     # Precarga el modelo de embeddings local para que la 1ª petición no espere la carga.
     import asyncio
 
-    from app.services import embeddings, kb_seed, policy_ingest, public_ingest
+    from app.services import embeddings, kb_seed, policy_ingest, public_ingest, video_ingest
 
     try:
         await asyncio.to_thread(embeddings._get_model)
@@ -54,6 +54,14 @@ async def _warmup() -> None:
     # de envío y políticas desde el contenido real del sitio.
     try:
         asyncio.create_task(policy_ingest.run_if_missing())
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Ingiere el catálogo de videos del canal de YouTube en segundo plano:
+    # idempotente por hash — en cada arranque solo embebe los videos nuevos,
+    # así el asistente aprende los uploads futuros automáticamente.
+    try:
+        asyncio.create_task(video_ingest.run_startup())
     except Exception:  # noqa: BLE001
         pass
 
