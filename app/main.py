@@ -35,35 +35,27 @@ async def _warmup() -> None:
     except Exception:  # noqa: BLE001
         pass
 
-    # Carga inicial del catálogo (feed público, sin token) en segundo plano: no
-    # bloquea el arranque ni el health check; corre una sola vez si la tabla está vacía.
-    try:
-        asyncio.create_task(public_ingest.run_if_empty())
-    except Exception:  # noqa: BLE001
-        pass
-
-    # Siembra la base de conocimiento automotriz/pintura (respuestas generales de
-    # técnica) en segundo plano: idempotente, solo inserta lo que falte.
-    try:
-        asyncio.create_task(kb_seed.run_seed())
-    except Exception:  # noqa: BLE001
-        pass
-
-    # Ingiere las políticas del sitio (envíos, devoluciones, FAQ) al KB en segundo
-    # plano: corre una sola vez si aún no están cargadas. Así el AI responde tiempos
-    # de envío y políticas desde el contenido real del sitio.
-    try:
-        asyncio.create_task(policy_ingest.run_if_missing())
-    except Exception:  # noqa: BLE001
-        pass
-
-    # Ingiere el catálogo de videos del canal de YouTube en segundo plano:
-    # idempotente por hash — en cada arranque solo embebe los videos nuevos,
-    # así el asistente aprende los uploads futuros automáticamente.
-    try:
-        asyncio.create_task(video_ingest.run_startup())
-    except Exception:  # noqa: BLE001
-        pass
+    # Tareas de fondo del arranque. IMPORTANTE: guardamos referencias fuertes —
+    # sin ellas, asyncio puede recolectar (GC) una tarea a mitad de ejecución y
+    # muere en silencio sin log.
+    global _bg_tasks
+    _bg_tasks = []
+    for coro_factory in (
+        # Carga inicial del catálogo (feed público, sin token): corre solo si
+        # la tabla está incompleta.
+        public_ingest.run_if_empty,
+        # Siembra/actualiza la base de conocimiento automotriz (idempotente).
+        kb_seed.run_seed,
+        # Políticas del sitio (envíos, devoluciones, FAQ): solo si faltan.
+        policy_ingest.run_if_missing,
+        # Videos del canal de YouTube: idempotente por hash, aprende uploads
+        # nuevos en cada arranque.
+        video_ingest.run_startup,
+    ):
+        try:
+            _bg_tasks.append(asyncio.create_task(coro_factory()))
+        except Exception:  # noqa: BLE001
+            pass
 
 
 @app.get("/health")
