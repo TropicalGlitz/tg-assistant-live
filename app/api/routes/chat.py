@@ -171,11 +171,9 @@ async def ingest_videos(key: str = ""):
     para no chocar con el timeout del proxy. Revisa el conteo en /admin o en la BD."""
     if not _settings.admin_token or key != _settings.admin_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
-    import asyncio
-
     from app.services import video_ingest
 
-    asyncio.create_task(video_ingest.run_startup())
+    _spawn_bg(video_ingest.run_startup())
     return {"ok": True, "started": True}
 
 
@@ -189,6 +187,18 @@ class VideoUpload(BaseModel):
 
 
 _VIDEO_ID_RE = re.compile(r"^[A-Za-z0-9_-]{6,20}$")
+
+# Referencias fuertes a tareas de fondo: sin esto, asyncio puede recolectarlas
+# a mitad de ejecución (garbage collection) y mueren en silencio.
+_BG_TASKS: set = set()
+
+
+def _spawn_bg(coro) -> None:
+    import asyncio
+
+    task = asyncio.create_task(coro)
+    _BG_TASKS.add(task)
+    task.add_done_callback(_BG_TASKS.discard)
 
 
 @router.post("/admin/upload-videos")
@@ -205,11 +215,9 @@ async def upload_videos(payload: VideoUpload, key: str = ""):
         for v in payload.videos
         if _VIDEO_ID_RE.match(v.id) and v.title.strip()
     ]
-    import asyncio
-
     from app.services import video_ingest
 
-    asyncio.create_task(video_ingest.ingest_list(vids))
+    _spawn_bg(video_ingest.ingest_list_safe(vids))
     return {"ok": True, "received": len(vids), "started": True}
 
 
