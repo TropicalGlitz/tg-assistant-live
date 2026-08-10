@@ -156,7 +156,7 @@
 | 146 | Silver? | Platinum Plus metal flake. | 18 | Platinum Plus Metal Flake |
 | 147 | Order cancelled, what to do? | Call 786-383-3013. | 18 | — |
 | 148 | Sealer for door jambs? | Any clear product. | 17 | Car-Rep® Clear Aerosol; SPI Universal/Production/Euro Clear |
-| 149 | Intercoat in spray can? | No intercoat in spray can. | 17 | — |
+| 149 | Intercoat in spray can? | Yes — Intercoat Clear is available in a 12oz Spray Can, plus Ready to Spray (4oz), Pint, Quart and Gallon sizes. | 17 | Intercoat Clear |
 | 150 | Base under Grape Lollipop Candy in pic? | Comet Silver. | 16 | — |
 | 151 | Strainer size for .008 flake? | Don't use a strainer with metal flake/metallic base. | 16 | — |
 | 152 | Loki Green over this? | No; needs silver metallic base (Comet/Galactic/Mercury). | 14 | Comet/Galactic/Mercury Silver |
