@@ -118,9 +118,23 @@ KNOWLEDGE: list[tuple[str, str]] = [
     ),
     (
         "How long should I wait between coats and before buffing?",
-        "Follow the product's flash time between coats — enough for it to go tacky, not fully "
-        "hard. Let the clear fully cure before wet-sanding and buffing; that takes longer and "
-        "speeds up with gentle heat. Rushing the buff before it's cured is a common mistake.",
+        "It depends on what you're spraying. COLOR coats — basecoats, pearl basecoats, flake "
+        "bases and candy — need each coat to dry FULLY before the next one goes on; recoating "
+        "color while it's still tacky can trap solvent and wrinkle, cloud or streak the finish. "
+        "PRIMER and CLEAR are different: their next coat can be applied once the previous one "
+        "flashes to tacky. Before wet-sanding and buffing, let the clear cure completely — that "
+        "takes longer, and rushing the buff is a common mistake. Drying speed changes with "
+        "temperature, humidity and how heavy you sprayed, so always confirm your product's "
+        "tech-sheet times.",
+    ),
+    (
+        "When can I apply the second coat of basecoat, pearl or candy?",
+        "Wait until the first coat is COMPLETELY dry — not just tacky. Basecoats, pearl "
+        "basecoats and candies must be fully dry before the next coat, or you risk trapping "
+        "solvent, streaking or clouding the color. This is different from primer and clear "
+        "coat, where the next coat can go on once the previous one is tacky. Temperature, "
+        "humidity and how heavy you sprayed all affect dry time, so give color coats the time "
+        "they need before recoating.",
     ),
     (
         "Can I mix two colors together to make a custom color?",
@@ -155,26 +169,32 @@ KNOWLEDGE: list[tuple[str, str]] = [
 ]
 
 
-async def _existing_questions(qs: list[str]) -> set[str]:
+async def _existing_hashes(qs: list[str]) -> dict[str, str]:
     async with AsyncSessionLocal() as session:
         rows = (
             await session.execute(
-                text("SELECT question FROM faqs WHERE question = ANY(:qs)"), {"qs": qs}
+                text("SELECT question, content_hash FROM faqs WHERE question = ANY(:qs)"),
+                {"qs": qs},
             )
         ).all()
-        return {r[0] for r in rows}
+        return {r[0]: r[1] for r in rows}
 
 
 async def run_seed() -> None:
-    """Inserta el conocimiento que falte en `faqs`. Idempotente y barato: solo
-    embebe las preguntas que aún no existen."""
+    """Inserta el conocimiento que falte en `faqs` y ACTUALIZA las entradas cuya
+    respuesta cambió (comparando content_hash). Idempotente y barato: solo embebe
+    lo nuevo o lo editado."""
     questions = [q for q, _ in KNOWLEDGE]
     try:
-        have = await _existing_questions(questions)
+        have = await _existing_hashes(questions)
     except Exception:  # noqa: BLE001
         _log.exception("No se pudo consultar faqs; se omite seed de conocimiento")
         return
-    missing = [(q, a) for q, a in KNOWLEDGE if q not in have]
+    missing = [
+        (q, a)
+        for q, a in KNOWLEDGE
+        if have.get(q) != embeddings.content_hash(q + "|" + a)
+    ]
     if not missing:
         _log.info("Base de conocimiento al día (%s entradas); nada que sembrar", len(KNOWLEDGE))
         return
