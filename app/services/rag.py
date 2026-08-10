@@ -103,10 +103,11 @@ async def retrieve(
     )
     faqs = await kb_store.search_faqs(session, q_vec, top_k=4)
     kb = await kb_store.search_kb(session, q_vec, top_k=3)
+    videos = await kb_store.search_videos(session, q_vec, top_k=2)
     best = max(
         [h["score"] for h in products] + [f["score"] for f in faqs] + [c["score"] for c in kb] + [0.0]
     )
-    return {"products": products, "faqs": faqs, "kb": kb, "best_score": best}
+    return {"products": products, "faqs": faqs, "kb": kb, "videos": videos, "best_score": best}
 
 
 def build_context(hits: dict[str, Any]) -> str:
@@ -119,6 +120,11 @@ def build_context(hits: dict[str, Any]) -> str:
         if c["score"] >= 0.35:
             blocks.append(json.dumps({"type": "guide", "doc": c["doc_name"],
                                       "text": c["text"][:900]}, ensure_ascii=False))
+    # Videos del canal de YouTube: solo si son realmente afines a la pregunta.
+    for v in hits.get("videos", []):
+        if v["score"] >= 0.5:
+            blocks.append(json.dumps({"type": "video", "video": v["text"][:300]},
+                                     ensure_ascii=False))
     for p in hits["products"]:
         if p["score"] >= _settings.min_similarity:
             pl = p["payload"]
@@ -258,6 +264,9 @@ def _sources(hits: dict[str, Any]) -> list[dict[str, Any]]:
         out.append({"source": "faq", "ref": f["question"], "score": round(f["score"], 3)})
     for c in hits["kb"][:2]:
         out.append({"source": "kb", "ref": c["doc_name"], "score": round(c["score"], 3)})
+    for v in hits.get("videos", [])[:2]:
+        if v["score"] >= 0.5:
+            out.append({"source": "video", "ref": v["text"][:80], "score": round(v["score"], 3)})
     for p in hits["products"][:3]:
         out.append({"source": "product", "ref": p["payload"]["title"], "score": round(p["score"], 3)})
     return out

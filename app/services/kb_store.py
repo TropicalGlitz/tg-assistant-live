@@ -90,11 +90,32 @@ async def upsert_kb_chunk(
 async def search_kb(
     session: AsyncSession, embedding: list[float], top_k: int = 3
 ) -> list[dict[str, Any]]:
+    """Guías/documentos (excluye los videos de YouTube, que tienen su propia búsqueda)."""
     q = text(
         """
         SELECT doc_name, chunk_idx, text,
                1 - (embedding <=> CAST(:emb AS vector)) AS score
         FROM kb_chunks
+        WHERE doc_name NOT LIKE 'YT|%'
+        ORDER BY embedding <=> CAST(:emb AS vector)
+        LIMIT :k;
+        """
+    )
+    rows = (await session.execute(q, {"emb": _vec(embedding), "k": top_k})).mappings().all()
+    return [dict(r) for r in rows]
+
+
+async def search_videos(
+    session: AsyncSession, embedding: list[float], top_k: int = 2
+) -> list[dict[str, Any]]:
+    """Videos de YouTube (chunks 'YT|<videoId>'): colección aparte para que no
+    desplacen a las guías/políticas en el contexto."""
+    q = text(
+        """
+        SELECT doc_name, text,
+               1 - (embedding <=> CAST(:emb AS vector)) AS score
+        FROM kb_chunks
+        WHERE doc_name LIKE 'YT|%'
         ORDER BY embedding <=> CAST(:emb AS vector)
         LIMIT :k;
         """
