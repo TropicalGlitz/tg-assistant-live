@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import json
+import re
 import math
 from pathlib import Path
 
@@ -176,6 +177,40 @@ async def ingest_videos(key: str = ""):
 
     asyncio.create_task(video_ingest.run_startup())
     return {"ok": True, "started": True}
+
+
+class VideoUploadItem(BaseModel):
+    id: str = Field(..., min_length=6, max_length=20)
+    title: str = Field(..., min_length=1, max_length=300)
+
+
+class VideoUpload(BaseModel):
+    videos: list[VideoUploadItem]
+
+
+_VIDEO_ID_RE = re.compile(r"^[A-Za-z0-9_-]{6,20}$")
+
+
+@router.post("/admin/upload-videos")
+async def upload_videos(payload: VideoUpload, key: str = ""):
+    """Backfill único del catálogo de videos: recibe [(id, título)] extraídos del
+    canal y los ingiere en segundo plano (idempotente por hash). Complementa la
+    ingesta automática de arranque, que solo alcanza las primeras páginas."""
+    if not _settings.admin_token or key != _settings.admin_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
+    if len(payload.videos) > 3000:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="too many")
+    vids = [
+        (v.id, v.title.strip())
+        for v in payload.videos
+        if _VIDEO_ID_RE.match(v.id) and v.title.strip()
+    ]
+    import asyncio
+
+    from app.services import video_ingest
+
+    asyncio.create_task(video_ingest.ingest_list(vids))
+    return {"ok": True, "received": len(vids), "started": True}
 
 
 # ---------------------------------------------------------------------------
