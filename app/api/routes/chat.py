@@ -163,6 +163,21 @@ async def ingest_kb(key: str = ""):
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)[:300])
 
 
+@router.get("/admin/ingest-videos")
+async def ingest_videos(key: str = ""):
+    """(Re)ingiere el catálogo de videos del canal de YouTube en segundo plano.
+    Responde de inmediato; el trabajo (fetch + embeddings de lo nuevo) corre detrás
+    para no chocar con el timeout del proxy. Revisa el conteo en /admin o en la BD."""
+    if not _settings.admin_token or key != _settings.admin_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
+    import asyncio
+
+    from app.services import video_ingest
+
+    asyncio.create_task(video_ingest.run_startup())
+    return {"ok": True, "started": True}
+
+
 # ---------------------------------------------------------------------------
 # Panel de supervisión: /admin/conversations?key=ADMIN_TOKEN
 # Lee (no modifica) las conversaciones para que el dueño vea qué responde el AI.
