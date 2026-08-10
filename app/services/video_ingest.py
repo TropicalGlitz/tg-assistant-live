@@ -141,6 +141,9 @@ async def _existing_hashes() -> dict[str, str]:
         return {r[0]: r[1] for r in rows}
 
 
+_BATCH = 50  # embebe y upserta por lotes: memoria acotada y progreso persistente
+
+
 async def ingest_list(videos: list[tuple[str, str]]) -> dict[str, Any]:
     """Upserta una lista [(videoId, title)]: solo lo nuevo/cambiado (por hash)."""
     have = await _existing_hashes()
@@ -153,20 +156,33 @@ async def ingest_list(videos: list[tuple[str, str]]) -> dict[str, Any]:
         _log.info("Videos al día (%s recibidos); nada que ingerir", len(videos))
         return {"total": len(videos), "ingested": 0}
     _log.info("Ingesta de videos: %s nuevos/cambiados de %s", len(pending), len(videos))
-    vecs = await embeddings.embed_batch([t for _, t in pending])
-    async with AsyncSessionLocal() as session:
-        for (vid, title), vec in zip(pending, vecs):
-            await kb_store.upsert_kb_chunk(
-                session,
-                doc_name=DOC_PREFIX + vid,
-                chunk_idx=0,
-                chunk_text=f"{title} — Watch: https://youtu.be/{vid}",
-                embedding=vec,
-                time_used=0,
-                content_hash=embeddings.content_hash(title),
-            )
-    _log.info("Ingesta de videos completa: %s upsertados", len(pending))
-    return {"total": len(videos), "ingested": len(pending)}
+    done = 0
+    for i in range(0, len(pending), _BATCH):
+        batch = pending[i : i + _BATCH]
+        vecs = await embeddings.embed_batch([t for _, t in batch])
+        async with AsyncSessionLocal() as session:
+            for (vid, title), vec in zip(batch, vecs):
+                await kb_store.upsert_kb_chunk(
+                    session,
+                    doc_name=DOC_PREFIX + vid,
+                    chunk_idx=0,
+                    chunk_text=f"{title} — Watch: https://youtu.be/{vid}",
+                    embedding=vec,
+                    time_used=0,
+                    content_hash=embeddings.content_hash(title),
+                )
+        done += len(batch)
+        _log.info("Ingesta de videos: %s/%s", done, len(pending))
+    _log.info("Ingesta de videos completa: %s upsertados", done)
+    return {"total": len(videos), "ingested": done}
+
+
+async def ingest_list_safe(videos: list[tuple[str, str]]) -> None:
+    """Wrapper para tareas de fondo: nunca lanza, deja el error en el log."""
+    try:
+        await ingest_list(videos)
+    except Exception:  # noqa: BLE001
+        _log.exception("Fallo la ingesta de la lista de videos")
 
 
 async def run() -> dict[str, Any]:
