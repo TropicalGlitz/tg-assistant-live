@@ -45,16 +45,48 @@ def _walk(node: Any, key: str, results: list) -> None:
             _walk(v, key, results)
 
 
+def _title_text(t: Any) -> str:
+    """Texto de un objeto 'title' de YouTube (formato .content o .runs)."""
+    if not isinstance(t, dict):
+        return ""
+    if t.get("content"):
+        return str(t["content"])
+    runs = t.get("runs") or []
+    return " ".join((run.get("text") or "") for run in runs).strip()
+
+
 def _extract_items(data: dict) -> list[tuple[str, str]]:
-    """(videoId, title) de cada playlistVideoRenderer de la respuesta."""
+    """(videoId, title) de cada item de la respuesta. Soporta el formato clásico
+    (playlistVideoRenderer) y el nuevo (lockupViewModel con contentId)."""
+    out: list[tuple[str, str]] = []
+    seen: set[str] = set()
+
+    # Formato clásico.
     renderers: list = []
     _walk(data, "playlistVideoRenderer", renderers)
-    out: list[tuple[str, str]] = []
     for r in renderers:
         vid = r.get("videoId")
-        runs = (r.get("title") or {}).get("runs") or []
-        title = " ".join((run.get("text") or "") for run in runs).strip()
-        if vid and title:
+        title = _title_text(r.get("title"))
+        if vid and title and vid not in seen:
+            seen.add(vid)
+            out.append((vid, " ".join(title.split())))
+
+    # Formato nuevo (UI 2024+): lockupViewModel.
+    lockups: list = []
+    _walk(data, "lockupViewModel", lockups)
+    for l in lockups:
+        if l.get("contentType") not in (None, "LOCKUP_CONTENT_TYPE_VIDEO"):
+            continue
+        vid = l.get("contentId")
+        titles: list = []
+        _walk(l.get("metadata") or {}, "title", titles)
+        title = ""
+        for t in titles:
+            title = _title_text(t)
+            if title:
+                break
+        if vid and title and vid not in seen:
+            seen.add(vid)
             out.append((vid, " ".join(title.split())))
     return out
 
