@@ -137,6 +137,14 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "they need before recoating.",
     ),
     (
+        "Do your paint colors come in spray cans?",
+        "Yes — nearly every paint we sell (candies, candy basecoats, pearls, metallic and "
+        "flake basecoats) is also available as a ready-to-spray 12oz Spray Can variant on its "
+        "product page. Separately, the Drip® series is our Pantone-matched solid-color line "
+        "that comes exclusively in spray cans. Tell us the color and finish you're after — "
+        "candy, pearl, flake or solid — and we'll point you to it in spray can form.",
+    ),
+    (
         "Can I mix two colors together to make a custom color?",
         "Solid basecoats from the same line can generally be intermixed to create your own "
         "color; candies tint rather than blend like solids. Whatever you mix, write down your "

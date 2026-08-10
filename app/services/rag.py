@@ -75,13 +75,31 @@ async def handle_order_intent(query: str) -> str | None:
             f"{CONTACT['email']} / {CONTACT['phone']}.")
 
 
+# Palabras de ENVASE/FORMATO en la consulta ("spray can", "aerosol", "12oz"...).
+# Casi todas las pinturas tienen variante Spray Can, así que el envase no debe
+# sesgar el ranking de productos hacia la línea Drip® (cuyos TÍTULOS contienen
+# "Spray Can"): para buscar productos se neutralizan y manda el COLOR/tipo.
+# OJO: no se toca el "can" suelto (verbo modal: "can I paint...").
+_PACKAGING_RE = re.compile(
+    r"\b(?:in\s+(?:a\s+)?)?(?:spray\s*cans?|rattle\s*cans?|aerosols?)\b"
+    r"|\bin\s+(?:a\s+)?cans?\b"
+    r"|\b12\s*oz\.?\b",
+    re.I,
+)
+
+
 async def retrieve(
     session: AsyncSession, query: str, max_price: float | None = None
 ) -> dict[str, Any]:
     """Recupera de las 3 colecciones y devuelve hits + score máximo."""
     q_vec = await embeddings.embed_text(query)
+    # Vector para PRODUCTOS: sin palabras de envase (si quedó algo sustancial).
+    p_vec = q_vec
+    stripped = re.sub(r"\s+", " ", _PACKAGING_RE.sub(" ", query)).strip(" .,!?")
+    if stripped.lower() != query.strip(" .,!?").lower() and len(stripped) >= 3:
+        p_vec = await embeddings.embed_text(stripped)
     products = await vector_store.similarity_search(
-        session, embedding=q_vec, top_k=_settings.top_k, only_available=True, max_price=max_price
+        session, embedding=p_vec, top_k=_settings.top_k, only_available=True, max_price=max_price
     )
     faqs = await kb_store.search_faqs(session, q_vec, top_k=4)
     kb = await kb_store.search_kb(session, q_vec, top_k=3)
