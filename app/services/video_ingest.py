@@ -141,11 +141,8 @@ async def _existing_hashes() -> dict[str, str]:
         return {r[0]: r[1] for r in rows}
 
 
-async def run() -> dict[str, Any]:
-    """Descarga el catálogo del canal y upserta solo lo nuevo/cambiado."""
-    videos = await fetch_all_videos()
-    if not videos:
-        return {"total": 0, "ingested": 0, "note": "playlist vacía o formato cambiado"}
+async def ingest_list(videos: list[tuple[str, str]]) -> dict[str, Any]:
+    """Upserta una lista [(videoId, title)]: solo lo nuevo/cambiado (por hash)."""
     have = await _existing_hashes()
     pending = [
         (vid, title)
@@ -153,7 +150,7 @@ async def run() -> dict[str, Any]:
         if have.get(DOC_PREFIX + vid) != embeddings.content_hash(title)
     ]
     if not pending:
-        _log.info("Videos al día (%s en canal); nada que ingerir", len(videos))
+        _log.info("Videos al día (%s recibidos); nada que ingerir", len(videos))
         return {"total": len(videos), "ingested": 0}
     _log.info("Ingesta de videos: %s nuevos/cambiados de %s", len(pending), len(videos))
     vecs = await embeddings.embed_batch([t for _, t in pending])
@@ -170,6 +167,19 @@ async def run() -> dict[str, Any]:
             )
     _log.info("Ingesta de videos completa: %s upsertados", len(pending))
     return {"total": len(videos), "ingested": len(pending)}
+
+
+async def run() -> dict[str, Any]:
+    """Descarga el catálogo del canal y upserta solo lo nuevo/cambiado.
+
+    Nota: desde IPs de datacenter YouTube puede servir solo las primeras páginas
+    de la playlist; con eso alcanza para aprender los uploads NUEVOS (siempre
+    vienen primero). El histórico profundo se puede cargar una vez vía
+    /admin/upload-videos con la lista completa."""
+    videos = await fetch_all_videos()
+    if not videos:
+        return {"total": 0, "ingested": 0, "note": "playlist vacía o formato cambiado"}
+    return await ingest_list(videos)
 
 
 async def run_startup() -> None:
