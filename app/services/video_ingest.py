@@ -356,7 +356,9 @@ async def ingest_transcripts(items: list[tuple[str, str, str, str]]) -> dict[str
             for vid, title, url, fallback in pending:
                 raw = ""
                 try:
-                    raw = await _fetch_timedtext(client, url)
+                    # Timeout duro: una conexión colgada a YouTube no puede
+                    # quedarse con el lock para siempre (tarea zombi).
+                    raw = await _asyncio.wait_for(_fetch_timedtext(client, url), timeout=20.0)
                 except Exception:  # noqa: BLE001
                     raw = ""
                 if not raw and fallback:
