@@ -351,10 +351,21 @@ async def ingest_transcripts(items: list[tuple[str, str, str]]) -> dict[str, Any
             headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
         ) as client:
             for vid, title, url in pending:
-                try:
-                    raw = await _fetch_timedtext(client, url)
-                except Exception:  # noqa: BLE001
-                    _log.warning("Transcripción %s: fallo la descarga", vid)
+                # Ritmo lento + reintento: YouTube limita ráfagas desde IPs de
+                # datacenter (devuelve 429 o cuerpo vacío); espaciar las descargas
+                # evita que se pierdan transcripciones en lotes grandes.
+                raw = ""
+                for attempt in (1, 2):
+                    try:
+                        raw = await _fetch_timedtext(client, url)
+                    except Exception:  # noqa: BLE001
+                        raw = ""
+                    if raw:
+                        break
+                    await _asyncio.sleep(6.0 * attempt)
+                await _asyncio.sleep(1.5)
+                if not raw:
+                    _log.warning("Transcripción %s: descarga vacía/fallida", vid)
                     failed += 1
                     continue
                 chunks = chunk_transcript(raw)
