@@ -205,3 +205,194 @@ async def run_startup() -> None:
         await run()
     except Exception:  # noqa: BLE001
         _log.exception("Fallo la ingesta de videos de YouTube")
+
+
+# ---------------------------------------------------------------------------
+# Transcripciones de los videos → chunks `YTT|<videoId>` en kb_chunks.
+#
+# El navegador (con sesión real de YouTube) extrae por video la URL FIRMADA de
+# subtítulos (timedtext) y la manda a /admin/upload-transcripts. El servidor
+# valida que la URL sea de youtube.com y del video correcto, descarga el texto,
+# lo trocea y lo embebe. Así el AI responde con el CONTENIDO de los videos y
+# puede enlazar el video correspondiente.
+#
+# `YTT|` NO matchea el filtro `LIKE 'YT|%'`, así que estos chunks entran por
+# search_kb (guías) y no desplazan la búsqueda de títulos de search_videos.
+# ---------------------------------------------------------------------------
+
+import asyncio as _asyncio
+from urllib.parse import parse_qs, urlparse
+
+TRANSCRIPT_PREFIX = "YTT|"
+_TIMEDTEXT_HOSTS = {"www.youtube.com", "youtube.com"}
+_CHUNK_SIZE = 1100
+_CHUNK_OVERLAP = 150
+_MAX_CHUNKS_PER_VIDEO = 60
+_EMBED_BATCH = 32
+
+# Serializa las ingestas de transcripciones: los lotes llegan del navegador más
+# rápido de lo que se embebe y sin el lock se apilarían varios hilos de embeddings
+# (memoria/CPU) a la vez.
+_TRANSCRIPT_LOCK = _asyncio.Lock()
+
+
+def valid_timedtext_url(url: str, video_id: str) -> bool:
+    """Solo aceptamos URLs de subtítulos FIRMADAS por YouTube y del video pedido:
+    el contenido queda garantizado por YouTube, no por quien llama al endpoint."""
+    try:
+        p = urlparse(url)
+    except Exception:  # noqa: BLE001
+        return False
+    if p.scheme != "https" or p.netloc not in _TIMEDTEXT_HOSTS:
+        return False
+    if p.path != "/api/timedtext":
+        return False
+    v = (parse_qs(p.query).get("v") or [""])[0]
+    return v == video_id
+
+
+def chunk_transcript(text_in: str) -> list[str]:
+    """Trocea en ~1100 chars con solape, cortando en límite de palabra."""
+    words = text_in.split()
+    if not words:
+        return []
+    chunks: list[str] = []
+    cur: list[str] = []
+    size = 0
+    for w in words:
+        cur.append(w)
+        size += len(w) + 1
+        if size >= _CHUNK_SIZE:
+            chunks.append(" ".join(cur))
+            # Solape: arrastra las últimas palabras para no cortar ideas.
+            keep: list[str] = []
+            ks = 0
+            for kw in reversed(cur):
+                ks += len(kw) + 1
+                if ks > _CHUNK_OVERLAP:
+                    break
+                keep.append(kw)
+            cur = list(reversed(keep))
+            size = sum(len(w) + 1 for w in cur)
+            if len(chunks) >= _MAX_CHUNKS_PER_VIDEO:
+                return chunks
+    if cur and (not chunks or len(" ".join(cur)) > 80):
+        chunks.append(" ".join(cur))
+    return chunks[:_MAX_CHUNKS_PER_VIDEO]
+
+
+def _parse_json3(data: dict) -> str:
+    """Texto plano de una respuesta timedtext fmt=json3."""
+    parts: list[str] = []
+    for ev in data.get("events") or []:
+        for seg in ev.get("segs") or []:
+            t = seg.get("utf8") or ""
+            if t and t != "\n":
+                parts.append(t)
+    text_out = " ".join(parts)
+    return " ".join(text_out.split())
+
+
+async def _fetch_timedtext(client: httpx.AsyncClient, url: str) -> str:
+    sep = "&" if "?" in url else "?"
+    if "fmt=" not in url:
+        url = url + sep + "fmt=json3"
+    resp = await client.get(url)
+    resp.raise_for_status()
+    if not resp.content:
+        return ""
+    try:
+        return _parse_json3(resp.json())
+    except ValueError:
+        return ""
+
+
+async def transcribed_ids() -> set[str]:
+    async with AsyncSessionLocal() as session:
+        rows = (
+            await session.execute(
+                text("SELECT DISTINCT doc_name FROM kb_chunks WHERE doc_name LIKE :p"),
+                {"p": TRANSCRIPT_PREFIX + "%"},
+            )
+        ).all()
+        return {r[0][len(TRANSCRIPT_PREFIX):] for r in rows}
+
+
+async def catalog_videos() -> list[tuple[str, str]]:
+    """[(videoId, title)] del catálogo ya ingerido (chunks YT|)."""
+    async with AsyncSessionLocal() as session:
+        rows = (
+            await session.execute(
+                text("SELECT doc_name, text FROM kb_chunks WHERE doc_name LIKE :p"),
+                {"p": DOC_PREFIX + "%"},
+            )
+        ).all()
+    out: list[tuple[str, str]] = []
+    for doc_name, chunk_text in rows:
+        vid = doc_name[len(DOC_PREFIX):]
+        title = chunk_text.split(" — Watch:")[0].strip()
+        out.append((vid, title))
+    return out
+
+
+async def ingest_transcripts(items: list[tuple[str, str, str]]) -> dict[str, Any]:
+    """Ingesta [(videoId, title, timedtextUrl)]: descarga, trocea y embebe.
+    Salta videos que ya tienen transcripción (idempotente)."""
+    async with _TRANSCRIPT_LOCK:
+        have = await transcribed_ids()
+        pending = [(v, t, u) for v, t, u in items if v not in have]
+        if not pending:
+            _log.info("Transcripciones: nada nuevo (%s recibidas)", len(items))
+            return {"received": len(items), "ingested": 0}
+        _log.info("Transcripciones: %s por ingerir", len(pending))
+        ok = empty = failed = 0
+        async with httpx.AsyncClient(
+            timeout=30.0,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
+        ) as client:
+            for vid, title, url in pending:
+                try:
+                    raw = await _fetch_timedtext(client, url)
+                except Exception:  # noqa: BLE001
+                    _log.warning("Transcripción %s: fallo la descarga", vid)
+                    failed += 1
+                    continue
+                chunks = chunk_transcript(raw)
+                if not chunks:
+                    empty += 1
+                    continue
+                prefix = f"[Video: {title} — https://youtu.be/{vid}] "
+                texts = [prefix + c for c in chunks]
+                try:
+                    for i in range(0, len(texts), _EMBED_BATCH):
+                        batch = texts[i : i + _EMBED_BATCH]
+                        vecs = await embeddings.embed_batch(batch)
+                        async with AsyncSessionLocal() as session:
+                            for j, (ct, vec) in enumerate(zip(batch, vecs)):
+                                await kb_store.upsert_kb_chunk(
+                                    session,
+                                    doc_name=TRANSCRIPT_PREFIX + vid,
+                                    chunk_idx=i + j,
+                                    chunk_text=ct,
+                                    embedding=vec,
+                                    time_used=0,
+                                    content_hash=embeddings.content_hash(ct),
+                                )
+                    ok += 1
+                except Exception:  # noqa: BLE001
+                    _log.exception("Transcripción %s: fallo el embedding/upsert", vid)
+                    failed += 1
+                if ok and ok % 10 == 0:
+                    _log.info("Transcripciones: %s/%s videos", ok, len(pending))
+        _log.info(
+            "Transcripciones listas: %s ok, %s sin subtítulos, %s fallidas", ok, empty, failed
+        )
+        return {"received": len(items), "ingested": ok, "empty": empty, "failed": failed}
+
+
+async def ingest_transcripts_safe(items: list[tuple[str, str, str]]) -> None:
+    """Wrapper para tareas de fondo: nunca lanza, deja el error en el log."""
+    try:
+        await ingest_transcripts(items)
+    except Exception:  # noqa: BLE001
+        _log.exception("Fallo la ingesta de transcripciones")
