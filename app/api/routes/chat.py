@@ -252,6 +252,9 @@ class TranscriptItem(BaseModel):
     id: str = Field(..., min_length=6, max_length=20)
     title: str = Field(..., min_length=1, max_length=300)
     url: str = Field(..., min_length=30, max_length=4000)
+    # Texto de respaldo (descargado por el navegador del cliente): se usa SOLO
+    # si la descarga directa desde YouTube falla (rate limit de IP datacenter).
+    text: str = Field("", max_length=200000)
 
 
 class TranscriptUpload(BaseModel):
@@ -270,7 +273,7 @@ async def upload_transcripts(payload: TranscriptUpload):
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="too many")
     catalog = {vid for vid, _ in await video_ingest.catalog_videos()}
     items = [
-        (it.id, " ".join(it.title.split()), it.url)
+        (it.id, " ".join(it.title.split()), it.url, it.text)
         for it in payload.items
         if _VIDEO_ID_RE.match(it.id)
         and it.id in catalog
