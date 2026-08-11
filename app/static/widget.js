@@ -40,6 +40,9 @@
     '#tg-w .m a:hover{opacity:.8}' +
     '#tg-w .m.u a{color:#fff}' +
     '#tg-w .src{font-size:11px;color:var(--tgm);align-self:flex-start;margin-top:-4px}' +
+    '#tg-w .mailbtn{align-self:flex-start;display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--tg);color:var(--tg);background:#fff;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer}' +
+    '#tg-w .mailbtn:hover{background:var(--tg);color:#fff}' +
+    '#tg-w .mailbtn[disabled]{opacity:.5;cursor:default}' +
     '#tg-w .ty{align-self:flex-start;display:inline-flex;gap:4px;padding:12px 14px;background:var(--tg2);border-radius:14px}' +
     '#tg-w .ty i{width:7px;height:7px;border-radius:50%;background:#bcbcc6;animation:tgb 1s infinite ease-in-out}' +
     '#tg-w .ty i:nth-child(2){animation-delay:.15s}#tg-w .ty i:nth-child(3){animation-delay:.3s}' +
@@ -281,6 +284,24 @@
       contactForm(prefill || "");
     }
 
+    // Botón "Email our team": aparece cuando el AI recomienda contactar a soporte,
+    // para que el cliente abra el formulario ahí mismo en un click (el chat viaja
+    // en el correo automáticamente).
+    function offerEmailButton() {
+      if (log.querySelector(".mailbtn:not([disabled])")) return; // no duplicar
+      var b = document.createElement("button");
+      b.className = "mailbtn";
+      b.type = "button";
+      b.textContent = "✉️ Email our team";
+      b.onclick = function () {
+        b.disabled = true;
+        logEvent("open_contact", {});
+        openContact();
+      };
+      log.appendChild(b);
+      log.scrollTop = log.scrollHeight;
+    }
+
     function contactForm(prefill) {
       var box = document.createElement("div");
       box.className = "cform";
@@ -339,6 +360,9 @@
             if (i < words.length) { i++; ai.innerHTML = mdToHtml(words.slice(0, i).join(" ")); log.scrollTop = log.scrollHeight; setTimeout(tick, 18); }
             else {
               ai.innerHTML = mdToHtml(full);
+              // Si la respuesta recomienda contactar a soporte (email/teléfono) o es
+              // un handoff, ofrece el formulario de contacto en un click.
+              if (j.handoff || /support@tropicalglitz\.net|786-383-3013/i.test(full)) offerEmailButton();
               renderProducts(j.products);
               chips(j.handoff ? ["Contact a representative", "Browse best sellers"] : ["Tell me more", "Any promotions?", "Talk to a human"]);
             }
