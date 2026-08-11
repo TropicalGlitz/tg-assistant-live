@@ -335,12 +335,15 @@ async def catalog_videos() -> list[tuple[str, str]]:
     return out
 
 
-async def ingest_transcripts(items: list[tuple[str, str, str]]) -> dict[str, Any]:
-    """Ingesta [(videoId, title, timedtextUrl)]: descarga, trocea y embebe.
-    Salta videos que ya tienen transcripción (idempotente)."""
+async def ingest_transcripts(items: list[tuple[str, str, str, str]]) -> dict[str, Any]:
+    """Ingesta [(videoId, title, timedtextUrl, fallbackText)]: descarga de
+    YouTube (fuente autoritativa), trocea y embebe. Si YouTube limita la IP del
+    servidor (respuesta vacía/429), usa el texto de respaldo que mandó el
+    navegador — quien de todos modos tuvo que presentar una URL firmada por
+    YouTube para ese video. Salta videos ya transcritos (idempotente)."""
     async with _TRANSCRIPT_LOCK:
         have = await transcribed_ids()
-        pending = [(v, t, u) for v, t, u in items if v not in have]
+        pending = [it for it in items if it[0] not in have]
         if not pending:
             _log.info("Transcripciones: nada nuevo (%s recibidas)", len(items))
             return {"received": len(items), "ingested": 0}
@@ -350,20 +353,15 @@ async def ingest_transcripts(items: list[tuple[str, str, str]]) -> dict[str, Any
             timeout=30.0,
             headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
         ) as client:
-            for vid, title, url in pending:
-                # Ritmo lento + reintento: YouTube limita ráfagas desde IPs de
-                # datacenter (devuelve 429 o cuerpo vacío); espaciar las descargas
-                # evita que se pierdan transcripciones en lotes grandes.
+            for vid, title, url, fallback in pending:
                 raw = ""
-                for attempt in (1, 2):
-                    try:
-                        raw = await _fetch_timedtext(client, url)
-                    except Exception:  # noqa: BLE001
-                        raw = ""
-                    if raw:
-                        break
-                    await _asyncio.sleep(6.0 * attempt)
-                await _asyncio.sleep(1.5)
+                try:
+                    raw = await _fetch_timedtext(client, url)
+                except Exception:  # noqa: BLE001
+                    raw = ""
+                if not raw and fallback:
+                    raw = " ".join(fallback.split())
+                await _asyncio.sleep(0.5)
                 if not raw:
                     _log.warning("Transcripción %s: descarga vacía/fallida", vid)
                     failed += 1
