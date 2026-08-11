@@ -137,6 +137,22 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "they need before recoating.",
     ),
     (
+        "Can you make paint by OEM or factory paint code?",
+        "Yes! Our Paint by Code service (https://tropicalglitz.net/products/paint-by-code) "
+        "mixes custom paint matched to your vehicle's original equipment manufacturer (OEM) "
+        "paint code — for cars and motorcycles. To order, provide the paint code, the vehicle "
+        "make (brand), model and year so we can formulate the exact color. It comes in Ready "
+        "to Spray 2oz and 4oz, 12oz Spray Can, Pint, Quart and Gallon.",
+    ),
+    (
+        "Do you match factory colors for my car or motorcycle?",
+        "Yes — factory color matching is available through Paint by Code "
+        "(https://tropicalglitz.net/products/paint-by-code). Just have your OEM paint code, "
+        "vehicle make, model and year ready when you order, and we'll formulate the color to "
+        "match. The code is usually on a sticker in the door jamb, glove box or under the "
+        "hood — if you're not sure where to find it, tell us your vehicle and we'll help.",
+    ),
+    (
         "Do your paint colors come in spray cans?",
         "Yes — nearly every paint we sell (candies, candy basecoats, pearls, metallic and "
         "flake basecoats) is also available as a ready-to-spray 12oz Spray Can variant on its "
