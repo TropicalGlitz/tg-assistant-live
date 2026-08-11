@@ -222,6 +222,65 @@ async def upload_videos(payload: VideoUpload, key: str = ""):
 
 
 # ---------------------------------------------------------------------------
+# Transcripciones de videos: el navegador (con sesión de YouTube) extrae la URL
+# firmada de subtítulos por video y la manda aquí; el servidor descarga el texto
+# DESDE YOUTUBE (la URL se valida contra el video y el catálogo, así que el
+# contenido no lo controla quien llama) y lo embebe como conocimiento.
+# ---------------------------------------------------------------------------
+
+
+@router.get("/admin/transcript-status")
+async def transcript_status():
+    """Estado de la ingesta de transcripciones (solo lectura, datos públicos del
+    canal): cuántos videos hay, cuántos ya tienen transcripción y cuáles faltan."""
+    from app.services import video_ingest
+
+    videos = await video_ingest.catalog_videos()
+    done = await video_ingest.transcribed_ids()
+    missing = [
+        {"id": vid, "title": title} for vid, title in videos if vid not in done
+    ]
+    return {
+        "videos": len(videos),
+        "transcribed": len(done),
+        "missing": len(missing),
+        "pending": missing[:3000],
+    }
+
+
+class TranscriptItem(BaseModel):
+    id: str = Field(..., min_length=6, max_length=20)
+    title: str = Field(..., min_length=1, max_length=300)
+    url: str = Field(..., min_length=30, max_length=4000)
+
+
+class TranscriptUpload(BaseModel):
+    items: list[TranscriptItem]
+
+
+@router.post("/admin/upload-transcripts")
+async def upload_transcripts(payload: TranscriptUpload):
+    """Recibe [(id, título, URL firmada de subtítulos)] y arranca la ingesta en
+    segundo plano. Seguridad sin token: solo se aceptan URLs https de
+    youtube.com/api/timedtext firmadas para ESE video, y solo videos que ya están
+    en el catálogo del canal — el texto siempre viene de YouTube, nunca del caller."""
+    from app.services import video_ingest
+
+    if len(payload.items) > 300:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="too many")
+    catalog = {vid for vid, _ in await video_ingest.catalog_videos()}
+    items = [
+        (it.id, " ".join(it.title.split()), it.url)
+        for it in payload.items
+        if _VIDEO_ID_RE.match(it.id)
+        and it.id in catalog
+        and video_ingest.valid_timedtext_url(it.url, it.id)
+    ]
+    _spawn_bg(video_ingest.ingest_transcripts_safe(items))
+    return {"ok": True, "received": len(payload.items), "accepted": len(items), "started": True}
+
+
+# ---------------------------------------------------------------------------
 # Panel de supervisión: /admin/conversations?key=ADMIN_TOKEN
 # Lee (no modifica) las conversaciones para que el dueño vea qué responde el AI.
 # ---------------------------------------------------------------------------
