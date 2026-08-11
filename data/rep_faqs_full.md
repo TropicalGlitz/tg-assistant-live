@@ -67,7 +67,7 @@
 | 57 | What is intercoat clear used for? | Adhesion intermediary layer for paint/decor; prevents lift/crack/peel. | 97 | — |
 | 58 | Whole kit to paint a car? | No all-in-one kit; buy items separately. | 95 | — |
 | 59 | Black Cherry in a spray can? | Yes, all candy colors in spray cans. | 94 | — |
-| 60 | Color match to GM paint? | No paint matching offered. | 94 | — |
+| 60 | Color match to GM paint? | Yes — order it through our Paint by Code service with your OEM paint code, vehicle make, model and year. | 94 | Paint by Code |
 | 61 | Reducer for 90° weather? | Slow reducer. | 93 | Tropical Glitz Reducer |
 | 62 | Email? | support@tropicalglitz.net | 93 | — |
 | 63 | What is intercoat clear used for? | (dup) adhesion between layers, prevents lifting/cracking/peeling. | 89 | — |
@@ -125,7 +125,7 @@
 | 115 | Abyss Black in gallon? | Yes. | 36 | Abyss Black |
 | 116 | 2K clear cans not working? | Email tropicalglitz@gmail.com for technical issues. | 34 | — |
 | 117 | Intercoat + reducer for metal flakes? | TG Intercoat + Reducers. | 32 | Intercoat Clear; Tropical Glitz Reducer |
-| 118 | Match to QX1 Nissan? | No color matches. | 32 | — |
+| 118 | Match to QX1 Nissan? | Yes — Paint by Code can match OEM codes like Nissan QX1; provide the paint code, make, model and year when ordering. | 32 | Paint by Code |
 | 119 | Price of a paint kit? | No paint kits available. | 32 | — |
 | 120 | Purple Royale Dark vs Luscious Purple? | Luscious Purple slightly darker/richer. | 32 | — |
 | 121 | Price for whole setup? | Add items to cart to view total. | 31 | — |
@@ -173,7 +173,7 @@
 | 163 | TG colors as bed liner tint? | Yes but not RTS; must be pure unreduced basecoat. | 9 | — |
 | 164 | Candy powder? | No. | 8 | — |
 | 165 | Candy Magenta over Seductive Plum? | Very dark; test first or call. | 8 | — |
-| 166 | RTS mid coat / original Limelight match? | No paint match services. | 7 | — |
+| 166 | RTS mid coat / original Limelight match? | OEM/factory color matches are available through Paint by Code — provide the paint code, make, model and year. | 7 | Paint by Code |
 | 167 | Show candy powder? | No candy powder. | 6 | — |
 | 168 | Candy paint in dry form? | No. | 5 | — |
 | 169 | Kitty Punch in a spray can? | No, not at this time. | 5 | — |
