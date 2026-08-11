@@ -1,6 +1,15 @@
 """Punto de entrada FastAPI."""
 from __future__ import annotations
 
+import logging
+
+# Logs INFO visibles en Render: sin esto solo se ven WARNING+ (lastResort) y
+# las líneas de acceso de uvicorn — las tareas de fondo mueren en silencio.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
