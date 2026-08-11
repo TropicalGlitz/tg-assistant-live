@@ -359,16 +359,20 @@ async def ingest_transcripts(items: list[tuple[str, str, str, str]]) -> dict[str
                     # Timeout duro: una conexión colgada a YouTube no puede
                     # quedarse con el lock para siempre (tarea zombi).
                     raw = await _asyncio.wait_for(_fetch_timedtext(client, url), timeout=20.0)
-                except Exception:  # noqa: BLE001
+                    _log.info("Transcripción %s: fetch YouTube ok (%s chars)", vid, len(raw))
+                except Exception as e:  # noqa: BLE001
+                    _log.info("Transcripción %s: fetch YouTube falló (%s)", vid, type(e).__name__)
                     raw = ""
                 if not raw and fallback:
                     raw = " ".join(fallback.split())
+                    _log.info("Transcripción %s: usando texto de respaldo (%s chars)", vid, len(raw))
                 await _asyncio.sleep(0.5)
                 if not raw:
                     _log.warning("Transcripción %s: descarga vacía/fallida", vid)
                     failed += 1
                     continue
                 chunks = chunk_transcript(raw)
+                _log.info("Transcripción %s: %s chunks", vid, len(chunks))
                 if not chunks:
                     empty += 1
                     continue
@@ -377,24 +381,30 @@ async def ingest_transcripts(items: list[tuple[str, str, str, str]]) -> dict[str
                 try:
                     for i in range(0, len(texts), _EMBED_BATCH):
                         batch = texts[i : i + _EMBED_BATCH]
-                        vecs = await embeddings.embed_batch(batch)
+                        vecs = await _asyncio.wait_for(
+                            embeddings.embed_batch(batch), timeout=180.0
+                        )
+                        _log.info("Transcripción %s: embed lote %s ok", vid, i)
                         async with AsyncSessionLocal() as session:
                             for j, (ct, vec) in enumerate(zip(batch, vecs)):
-                                await kb_store.upsert_kb_chunk(
-                                    session,
-                                    doc_name=TRANSCRIPT_PREFIX + vid,
-                                    chunk_idx=i + j,
-                                    chunk_text=ct,
-                                    embedding=vec,
-                                    time_used=0,
-                                    content_hash=embeddings.content_hash(ct),
+                                await _asyncio.wait_for(
+                                    kb_store.upsert_kb_chunk(
+                                        session,
+                                        doc_name=TRANSCRIPT_PREFIX + vid,
+                                        chunk_idx=i + j,
+                                        chunk_text=ct,
+                                        embedding=vec,
+                                        time_used=0,
+                                        content_hash=embeddings.content_hash(ct),
+                                    ),
+                                    timeout=60.0,
                                 )
+                        _log.info("Transcripción %s: upsert lote %s ok", vid, i)
                     ok += 1
+                    _log.info("Transcripción %s: COMPLETA (%s/%s)", vid, ok, len(pending))
                 except Exception:  # noqa: BLE001
                     _log.exception("Transcripción %s: fallo el embedding/upsert", vid)
                     failed += 1
-                if ok and ok % 10 == 0:
-                    _log.info("Transcripciones: %s/%s videos", ok, len(pending))
         _log.info(
             "Transcripciones listas: %s ok, %s sin subtítulos, %s fallidas", ok, empty, failed
         )
