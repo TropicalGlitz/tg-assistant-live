@@ -228,7 +228,10 @@ _TIMEDTEXT_HOSTS = {"www.youtube.com", "youtube.com"}
 _CHUNK_SIZE = 1100
 _CHUNK_OVERLAP = 150
 _MAX_CHUNKS_PER_VIDEO = 60
-_EMBED_BATCH = 32
+# Lotes de embedding CHICOS: con 32 textos largos el ONNX runtime satura los
+# 512MB del contenedor y el hilo queda thrashing para siempre (visto en logs:
+# "43 chunks" y nunca "embed lote 0 ok"). Con 8 el pico de memoria es seguro.
+_EMBED_BATCH = 8
 
 # Serializa las ingestas de transcripciones: los lotes llegan del navegador más
 # rápido de lo que se embebe y sin el lock se apilarían varios hilos de embeddings
