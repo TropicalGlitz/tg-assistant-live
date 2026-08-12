@@ -17,6 +17,48 @@
 
   var LOGO = BACKEND + "/tg-logo.png";
 
+  // Contexto de la página: permite que el asistente actúe como un vendedor de
+  // piso — si el cliente está en la ficha de un candy, abre ofreciendo justo lo
+  // que se pregunta de un candy. Se lee de los metadatos que Shopify ya expone
+  // en el storefront, con la URL como respaldo.
+  function pageContext() {
+    var ctx = { page_type: "other", title: "", collection: "" };
+    try {
+      var meta = (window.ShopifyAnalytics && window.ShopifyAnalytics.meta) || {};
+      var page = meta.page || {};
+      var t = (page.pageType || "").toLowerCase();
+      if (t) ctx.page_type = t;
+      if (meta.product && meta.product.variants) {
+        ctx.page_type = "product";
+        ctx.title = meta.product.type || "";
+      }
+    } catch (e) {}
+    try {
+      var path = location.pathname || "";
+      if (/\/products\//.test(path)) ctx.page_type = "product";
+      else if (/\/collections\/[^/]+\/?$/.test(path)) ctx.page_type = "collection";
+      else if (/\/cart/.test(path)) ctx.page_type = "cart";
+      else if (/\/search/.test(path)) ctx.page_type = "search";
+      else if (path === "/" || path === "") ctx.page_type = "home";
+
+      // El título real del producto: og:title es el más fiable en los temas de
+      // Shopify; si no está, caemos al <h1> y por último al <title>.
+      if (ctx.page_type === "product" && !ctx.title) {
+        var og = document.querySelector('meta[property="og:title"]');
+        var h1 = document.querySelector("h1");
+        ctx.title = (og && og.content) || (h1 && h1.textContent) || document.title || "";
+      }
+      if (ctx.page_type === "collection") {
+        var ogc = document.querySelector('meta[property="og:title"]');
+        var h1c = document.querySelector("h1");
+        ctx.collection = (ogc && ogc.content) || (h1c && h1c.textContent) || "";
+      }
+    } catch (e) {}
+    ctx.title = String(ctx.title || "").trim().slice(0, 200);
+    ctx.collection = String(ctx.collection || "").trim().slice(0, 120);
+    return ctx;
+  }
+
   var CSS =
     '#tg-w *{box-sizing:border-box}' +
     '#tg-w{--tg:#ef2c8f;--tg2:#f3f3f3;--tgt:#1b1b1f;--tgm:#6b6b74;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}' +
@@ -275,11 +317,37 @@
     // el cliente lo encuentra tal como lo dejó.
     function setOpenFlag(v) { try { localStorage.setItem("tg_open", v ? "1" : "0"); } catch (e) {} }
 
+    // Sugerencias de la página actual: se piden una sola vez y se cachean, para
+    // que abrir el chat sea instantáneo.
+    var SUG = null;
+    function loadSuggestions() {
+      if (SUG) return Promise.resolve(SUG);
+      var c = pageContext();
+      var qs = "?page_type=" + encodeURIComponent(c.page_type) +
+               "&title=" + encodeURIComponent(c.title) +
+               "&collection=" + encodeURIComponent(c.collection);
+      return fetch(BACKEND + "/suggest" + qs)
+        .then(function (r) { return r.json(); })
+        .then(function (j) { SUG = j || {}; return SUG; })
+        .catch(function () { SUG = {}; return SUG; });
+    }
+
     function open(skipFocus) {
       P.dataset.open = "true"; L.setAttribute("aria-expanded", "true");
       if (!skipFocus) T.focus();
       setOpenFlag(true);
-      if (!greeted) { greeted = true; add("m ai", "Welcome back! How may I be of service to you today?"); chips(["Any promotions?", "How much paint do I need?", "Talk to a human"]); }
+      if (greeted) return;
+      greeted = true;
+      // Saludo genérico inmediato; si el backend responde con uno contextual
+      // (p. ej. el cliente está viendo un candy), se reemplaza y se muestran las
+      // preguntas típicas de ESE producto.
+      var g = add("m ai", "Welcome back! How may I be of service to you today?");
+      chips(["Any promotions?", "How much paint do I need?", "Talk to a human"]);
+      loadSuggestions().then(function (s) {
+        if (s && s.greeting) g.textContent = s.greeting;
+        if (s && s.chips && s.chips.length) chips(s.chips);
+        log.scrollTop = log.scrollHeight;
+      });
     }
     function close() { P.dataset.open = "false"; L.setAttribute("aria-expanded", "false"); L.focus(); setOpenFlag(false); }
 
