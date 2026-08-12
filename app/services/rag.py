@@ -102,7 +102,10 @@ async def retrieve(
         session, embedding=p_vec, top_k=_settings.top_k, only_available=True, max_price=max_price
     )
     faqs = await kb_store.search_faqs(session, q_vec, top_k=4)
-    kb = await kb_store.search_kb(session, q_vec, top_k=3)
+    # top_k=4: la colección de guías ahora compite entre políticas del sitio,
+    # hojas técnicas (SPI|) y transcripciones de video (YTT|); con 3 una pregunta
+    # técnica podía quedarse sin su hoja técnica.
+    kb = await kb_store.search_kb(session, q_vec, top_k=4)
     videos = await kb_store.search_videos(session, q_vec, top_k=2)
     # Códigos de promoción: los controla el dueño desde el panel. Siempre se
     # incluyen (activos o "ninguno") para que el AI nunca invente un descuento.
