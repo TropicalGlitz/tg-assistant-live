@@ -25,7 +25,7 @@ COMPLEMENTS: list[tuple[tuple[str, ...], list[str]]] = [
     (("clear",), ["reducer"]),
     (("primer",), ["a basecoat", "clear coat"]),
 ]
-FREE_SHIP = 399
+FREE_SHIP = 499
 
 
 def _complements_for(title: str) -> list[str]:
