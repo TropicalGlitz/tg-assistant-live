@@ -253,6 +253,27 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "manufacturer's pressure limits and the product's technical data sheet.",
     ),
     (
+        "Do you ship paint to Hawaii, Alaska or Puerto Rico?",
+        "Yes - we ship all of our products to Hawaii, Alaska, Puerto Rico and other US states and "
+        "territories outside the mainland, and that INCLUDES flammable paint. There's no product "
+        "restriction; the only difference is transit time. Mainland US orders usually arrive in "
+        "2-5 business days, while non-mainland destinations take about 10-16 business days from "
+        "the ship date, so order a little earlier if you're working to a deadline. The "
+        "dry-goods-only rule applies to international orders outside the US, Canada and Mexico - "
+        "not to Hawaii or Alaska.",
+    ),
+    (
+        "Where do you ship to?",
+        "We ship across the US and internationally. Within the US we ship everywhere - all 50 "
+        "states plus Puerto Rico and other territories - and every product, including flammable "
+        "paint; Hawaii, Alaska and other non-mainland destinations just take 10-16 business days "
+        "instead of the usual 2-5. Internationally we ship worldwide, but outside the US, Canada "
+        "and Mexico we can only send dry goods (metal flakes, pearls and leaf), because flammable "
+        "liquid paint can't go overseas. International rates run about $30-$100 depending on the "
+        "country, with 10-16 business days to Canada, Australia and the UK and 15-25 business "
+        "days elsewhere. US orders over $499 ship free (can't be combined with a discount code).",
+    ),
+    (
         "Can you make paint by OEM or factory paint code?",
         "Yes! Our Paint by Code service (https://tropicalglitz.net/products/paint-by-code) "
         "mixes custom paint matched to your vehicle's original equipment manufacturer (OEM) "
