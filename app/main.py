@@ -1,15 +1,6 @@
 """Punto de entrada FastAPI."""
 from __future__ import annotations
 
-import logging
-
-# Logs INFO visibles en Render: sin esto solo se ven WARNING+ (lastResort) y
-# las líneas de acceso de uvicorn — las tareas de fondo mueren en silencio.
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-)
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -37,7 +28,14 @@ async def _warmup() -> None:
     # Precarga el modelo de embeddings local para que la 1ª petición no espere la carga.
     import asyncio
 
-    from app.services import embeddings, kb_seed, policy_ingest, public_ingest, video_ingest
+    from app.services import (
+        embeddings,
+        kb_seed,
+        policy_ingest,
+        public_ingest,
+        spi_ingest,
+        video_ingest,
+    )
 
     try:
         await asyncio.to_thread(embeddings._get_model)
@@ -57,6 +55,9 @@ async def _warmup() -> None:
         kb_seed.run_seed,
         # Políticas del sitio (envíos, devoluciones, FAQ): solo si faltan.
         policy_ingest.run_if_missing,
+        # Hojas técnicas de clears/primers/accesorios: idempotente por hash,
+        # se actualiza editando data/spi_tech.json y redeployando.
+        spi_ingest.run_startup,
         # Videos del canal de YouTube: idempotente por hash, aprende uploads
         # nuevos en cada arranque.
         video_ingest.run_startup,
