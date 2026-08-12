@@ -85,6 +85,20 @@ async def chat(req: ChatRequest, session: AsyncSession = Depends(get_session)):
     return result
 
 
+@router.get("/history")
+async def history(session_id: str = "", session: AsyncSession = Depends(get_session)):
+    """Historial de la sesión para que el widget REPINTE la conversación cuando el
+    cliente navega (p. ej. hace click en un producto que le recomendó el AI y
+    luego vuelve). El session_id es el que el propio navegador guarda; se
+    devuelven solo pregunta/respuesta y nunca las filas del formulario de
+    contacto (llevan email y teléfono)."""
+    sid = (session_id or "").strip()
+    if not sid or len(sid) > 64:
+        return {"messages": []}
+    msgs = await conversations.session_history_public(session, sid, limit=20)
+    return {"messages": msgs}
+
+
 class ContactRequest(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=80)
     last_name: str = Field("", max_length=80)
