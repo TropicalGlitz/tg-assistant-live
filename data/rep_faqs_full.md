@@ -3,7 +3,7 @@
 > Extraído en vivo de `server.hellorep.ai/partner/tropicalglitz/faqs` (sesión autenticada, 2026-08-03).
 > Campos: pregunta · respuesta · `USED` (nº de recuperaciones RAG) · `RECO` (productos recomendados tras responder).
 > Este es el dataset a ingerir en la tabla `faqs` de pgvector para el reemplazo.
-> Contacto oficial detectado: tel **786-383-3013**, email **tropicalglitz@gmail.com** / **support@tropicalglitz.net**. Ubicación: Miami, FL. Horario: Lun-Vie 9am-5pm EST. Free shipping US > $399.
+> Contacto oficial detectado: tel **786-383-3013**, email **tropicalglitz@gmail.com** / **support@tropicalglitz.net**. Ubicación: Miami, FL. Horario: Lun-Vie 9am-5pm EST. Free shipping US > $499.
 
 | # | Pregunta | Respuesta | Usado | Recomienda |
 |---|----------|-----------|-------|------------|
@@ -23,7 +23,7 @@
 | 13 | Does metal flake come in base coat? | No, mix flakes in intercoat clear. | 207 | — |
 | 14 | Need reducer for ready-to-spray items? | No reducer required for RTS. | 204 | — |
 | 15 | Do I really need reducer? | Yes, all paints need reducer except RTS or spray cans. | 199 | — |
-| 16 | Free shipping over $399 not applying? | Free shipping US > $399, cannot combine with other promo/discount. | 196 | — |
+| 16 | Free shipping over $499 not applying? | Free shipping on US orders over $499; it cannot be combined with a discount code. | 196 | — |
 | 17 | Paint ready or needs mixing? | Cans & RTS bottles ready; other products need reducer. | 195 | — |
 | 18 | How much paint for a motorcycle? | Avg ≈ 1 quart; bagger/sports bike 2-3 quarts. | 189 | — |
 | 19 | What clear coat should I use? | Depends on project — what are you painting? | 189 | — |
@@ -97,7 +97,7 @@
 | 87 | Expedited shipping mid-job? | No expedited for paint; yes for dry products. | 61 | — |
 | 88 | Check reward points? | tropicalglitz.net/pages/dealers#smile-home | 60 | — |
 | 89 | Which silver is darker? | Same shade, coarseness varies: Mercury (smooth) < Galactic (medium) < Comet (high). | 59 | — |
-| 90 | Ship to Hawaii? | Yes, except flammable paint. | 59 | — |
+| 90 | Ship to Hawaii? | Yes — we ship all our products to Hawaii, including flammable paint. Non-mainland shipments just take longer: allow 10-16 business days. | 59 | — |
 | 91 | Paint for a guitar body (spray can)? | ≈ 1 can; semi-translucent needs primer/ground coat. | 58 | — |
 | 92 | Seductive paint for 2018 Ram 3500 short bed? | ≈ 2 gallons. | 56 | — |
 | 93 | What is intercoat clear used for? | (dup) confectionery/decor adhesion. | 54 | — |
@@ -108,7 +108,7 @@
 | 98 | Single stage paint? | No; all are polyurethane basecoats needing clear. | 49 | — |
 | 99 | Want color but not too much flake? | Metal flake in multiple jar sizes; 1.5oz for small projects. | 49 | — |
 | 100 | Where are you located / AI? | AI agent; Tropical Glitz in Miami, FL. | 49 | — |
-| 101 | Ship to Hawaii & Alaska? | Yes except flammable paint. | 49 | — |
+| 101 | Ship to Hawaii & Alaska? | Yes — we ship everything to both, including flammable paint. Allow 10-16 business days for delivery outside the mainland. | 49 | — |
 | 102 | Sample pack of all flakes? | No pack; 1.5oz jars in all colors. | 44 | — |
 | 103 | Spray can flakes available again? | Available: select flake color → amount: Spray can → size: Spray can. | 43 | — |
 | 104 | Wrong color, return process? | Email tropicalglitz@gmail.com or type "agent". | 42 | — |
@@ -130,7 +130,7 @@
 | 120 | Purple Royale Dark vs Luscious Purple? | Luscious Purple slightly darker/richer. | 32 | — |
 | 121 | Price for whole setup? | Add items to cart to view total. | 31 | — |
 | 122 | Glitter paint in orange? | Cosmic Orange or orange metal flakes over base. | 31 | Cosmic/Fanta/Lorax/Luscious Orange; Bahama Breeze/Cheet-oh/Mango Tango/Sun-Kissed/Tangy Tangerine Flake |
-| 123 | Gallon of Seductive Blue free shipping? | Free shipping US > $399. | 30 | — |
+| 123 | Gallon of Seductive Blue free shipping? | Free shipping on US orders over $499. | 30 | — |
 | 124 | Sell black sealer? | TG Hybrid Foundation Sealer — black/white/gray. | 30 | TG Hybrid Foundation Sealer; SPI 2K Urethane Sealer Kit |
 | 125 | Lots of color flop in blue? | Interstellar Blue Pearl for flop. | 29 | — |
 | 126 | Ordered quart of Neon, need gallon? | No gallon for Neon; select 4 quarts. | 29 | — |
@@ -144,7 +144,7 @@
 | 134 | Flake added to gelcoat? | Yes. | 26 | — |
 | 135 | Art Pigments into clear intercoat? | Yes. | 25 | — |
 | 136 | Dark emerald green like Seductive Blue? | Luscious Green. | 25 | Luscious Green |
-| 137 | Ship to Hawaii? | Yes, all products. | 24 | — |
+| 137 | Ship to Hawaii? | Yes, all products including flammable paint. Delivery outside the mainland takes 10-16 business days. | 24 | — |
 | 138 | Show gray paints? | Variety; specify type. | 23 | Overcast; Cloudy Dayz; Comet/Galactic/Mercury Silver |
 | 139 | Sangria candy spray can color? | Same color; top with clear coat. | 23 | Car-Rep® 2K Clear Aerosol; SPI Production Clear |
 | 140 | Black that looks red at angle? | Closest: Seductive Red. | 22 | Seductive Red |
