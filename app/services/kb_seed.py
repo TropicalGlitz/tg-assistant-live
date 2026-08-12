@@ -118,23 +118,139 @@ KNOWLEDGE: list[tuple[str, str]] = [
     ),
     (
         "How long should I wait between coats and before buffing?",
-        "It depends on what you're spraying. COLOR coats — basecoats, pearl basecoats, flake "
-        "bases and candy — need each coat to dry FULLY before the next one goes on; recoating "
-        "color while it's still tacky can trap solvent and wrinkle, cloud or streak the finish. "
-        "PRIMER and CLEAR are different: their next coat can be applied once the previous one "
-        "flashes to tacky. Before wet-sanding and buffing, let the clear cure completely — that "
-        "takes longer, and rushing the buff is a common mistake. Drying speed changes with "
-        "temperature, humidity and how heavy you sprayed, so always confirm your product's "
-        "tech-sheet times.",
+        "It depends on what you're spraying. COLOR coats — Tropical Glitz basecoats and candy "
+        "basecoats — need about 15–25 minutes of flash time, and each coat must be dry with an "
+        "even, uniform appearance and NO wet spots before the next one goes on; recoating color "
+        "while it's still wet or tacky can trap solvent and wrinkle, cloud or streak the finish. "
+        "PRIMER, SEALER and CLEAR are different: their next coat goes on once the previous one "
+        "flashes to a slightly tacky stage — don't apply the basecoat number to them, use that "
+        "product's tech sheet. Before wet-sanding and buffing, let the clear cure completely — "
+        "generally at least 24 hours before handling or polishing and about 5–7 days for a full "
+        "cure, depending on the clear. Cool temperatures, high humidity, poor airflow and heavy "
+        "coats all stretch these times, so always confirm your product's technical data sheet.",
     ),
     (
         "When can I apply the second coat of basecoat, pearl or candy?",
-        "Wait until the first coat is COMPLETELY dry — not just tacky. Basecoats, pearl "
-        "basecoats and candies must be fully dry before the next coat, or you risk trapping "
-        "solvent, streaking or clouding the color. This is different from primer and clear "
-        "coat, where the next coat can go on once the previous one is tacky. Temperature, "
-        "humidity and how heavy you sprayed all affect dry time, so give color coats the time "
-        "they need before recoating.",
+        "For Tropical Glitz basecoats and candy basecoats, allow roughly 15–25 minutes of flash "
+        "time between coats. Don't go by the clock alone — the surface should look even and "
+        "uniform with no wet spots before you recoat. Flash time is the wait BETWEEN coats; it's "
+        "not the same as drying or full curing time. Cool temperatures, high humidity, limited "
+        "airflow or heavy coats will make it take longer. This 15–25 minute guideline is for "
+        "basecoats and candy basecoats only — primers, sealers, intercoats and clears have their "
+        "own recoat windows in their technical data sheets. Rather than touching the paint to "
+        "test it, check a masked edge or a test panel.",
+    ),
+    (
+        "What is the difference between the Luscious, Eclipse and Cosmic lines?",
+        "All three are candy basecoats — they give you candy depth but spray like a basecoat. "
+        "LUSCIOUS uses medium-coarse metallics: candy depth in an easy, basecoat-style "
+        "application. ECLIPSE uses high-coarse metallics and is formulated so dark that at rest "
+        "it reads like a regular black basecoat — until the light hits it and the candy vibrance "
+        "comes alive. COSMIC uses medium-coarse metallics PLUS mini prismatic metal flakes, so on "
+        "top of the normal metallic reflection you get extra sparkle and flashes of color in the "
+        "light. Tell us the look you're after and we'll point you to the right series.",
+    ),
+    (
+        "What is the Eclipse series?",
+        "Eclipse is our candy basecoat series built around high-coarse metallics and a very dark "
+        "tone — sitting still it looks like a straight black basecoat, but when light hits it the "
+        "candy vibrance shows through. It's the pick when you want a color that hides in the "
+        "shade and comes alive in the sun. It sprays like a basecoat while giving you candy depth.",
+    ),
+    (
+        "What is the Cosmic series?",
+        "Cosmic is our candy basecoat series with medium-coarse metallics plus mini prismatic "
+        "metal flakes mixed in. Beyond the normal metallic reflection, those prismatic flakes "
+        "throw extra sparkle and flashes of color as the light moves across the paint. Like our "
+        "other candy basecoats, it has candy depth but sprays like a basecoat.",
+    ),
+    (
+        "What is the Luscious series?",
+        "Luscious is our candy basecoat series with medium-coarse metallics. You get true candy "
+        "depth, but it sprays like a regular basecoat, which makes it a great choice when you "
+        "want the candy look without a separate candy-over-base process.",
+    ),
+    (
+        "Can you match a custom color, or a Cerakote, PPG or House of Kolor color?",
+        "Custom color-match requests have to be reviewed by our customer service team first — we "
+        "can't confirm a match sight-unseen or from a photo, since screens and lighting shift how "
+        "a color reads. Email support@tropicalglitz.net with the manufacturer's name, the color "
+        "name or code, reference photos, and a physical sample or color chip if you have one, "
+        "plus the type of paint and the quantity you need. The team will review it and let you "
+        "know whether we can produce that color. Keep in mind the ground coat, lighting, "
+        "application technique and number of coats all affect how the final color looks.",
+    ),
+    (
+        "How long before I can apply clear coat over my basecoat?",
+        "For Tropical Glitz candy and standard basecoats, wait about 30 minutes after your FINAL "
+        "coat before clearing. For paints containing metal flakes, give it about 1 to 1½ hours — "
+        "the flake particles slow solvent evaporation. Either way, don't go by time alone: the "
+        "basecoat has to be completely dry and evenly flashed with no wet spots. Cool "
+        "temperatures, high humidity, limited airflow and heavy coats all add time. If you used "
+        "an activator, additive or reducer that can change the drying time too. Don't touch the "
+        "surface to test it — check a masked edge or test panel — and don't force-dry with heat "
+        "unless that product's technical data sheet allows it.",
+    ),
+    (
+        "How long does the paint need to cure?",
+        "Your basecoat does NOT need to fully cure before clear — it only needs to be completely "
+        "dry and properly flashed. The cure time for the finished job comes mainly from the clear "
+        "coat you used. As a general guideline, give it at least 24 hours before handling or "
+        "polishing and about 5–7 days for a full cure. Those are general estimates, not "
+        "guarantees: temperature, humidity, airflow and how many/how heavy your coats were all "
+        "change it. 'Dry to the touch', 'ready to handle', 'ready to polish' and 'fully cured' "
+        "are four different stages. Tell us which clear you used and what you want to do next "
+        "(handle, assemble, sand, polish, wax, ceramic coat) and we'll point you to that clear's "
+        "technical data sheet — for SPI clears, use the SPI tech sheets.",
+    ),
+    (
+        "Can I sand between coats?",
+        "Under normal conditions, no — you shouldn't sand between coats of basecoat. Let each "
+        "coat flash properly and lay the next one on. If you have to fix dust, a run or another "
+        "flaw, let the paint dry completely first, sand just that spot lightly, clean the surface "
+        "well, and then reapply basecoat so the finish stays uniform. Be extra careful with "
+        "candy, pearl, metallic and flake finishes: sanding disturbs the color, the metallic "
+        "orientation and the flake pattern, so after a repair you'll usually need another full, "
+        "even coat over the WHOLE area to get the color and particle layout back. Primers can be "
+        "sanded once they've dried the recommended time, and clear can be sanded to fix "
+        "imperfections or when you're adding more clear outside its recoat window. Always follow "
+        "the technical data sheet for the exact product.",
+    ),
+    (
+        "What happens if I wait too long before recoating?",
+        "If too much time passes, the previous layer can fall outside its recoat window, and the "
+        "next coat may not bond properly — that's what leads to peeling, chipping, lifting, "
+        "wrinkling or delamination. Once the maximum recoat time is exceeded, the surface usually "
+        "has to be cleaned and scuffed or sanded to create a mechanical bond before you continue. "
+        "Waiting also gives dust, oil and moisture time to settle on the surface. Recoating too "
+        "SOON is its own problem though, because it traps solvent. Every primer, basecoat, "
+        "intercoat and clear has a different recoat window, so follow that product's technical "
+        "data sheet and account for temperature, humidity, airflow and coat thickness. If the "
+        "finish is already lifting, wrinkling, peeling or delaminating, stop spraying and contact "
+        "us at support@tropicalglitz.net before you add anything else.",
+    ),
+    (
+        "What spray gun tip size should I use?",
+        "Tip size depends on what you're spraying and, for flake, how big the flake is. "
+        "Basecoats, pearls, intercoat clear and clear coats: 1.3–1.4mm. Metal flakes mixed into "
+        "intercoat clear go up from there — .004 inch flake: 1.4–1.6mm; .008 inch flake: "
+        "1.7–2.0mm; .015 inch flake: 2.0–2.5mm; .025 inch flake: 2.5mm. Anything larger than .025 "
+        "inch should go through a Flake Slinger dry-flake gun instead. The rule of thumb is "
+        "simple: bigger flake needs a bigger tip to pass through cleanly. These are general "
+        "recommendations — your gun, your mix and your technique can shift the ideal setup, so "
+        "check the product's technical data sheet too.",
+    ),
+    (
+        "What PSI or air pressure do you recommend?",
+        "Start around 20–30 PSI for most of our products, then dial it in. As starting points: "
+        "basecoat 20–30 PSI, clear coat 25–30 PSI, intercoat clear 20–30 PSI, pearls 20–25 PSI, "
+        ".004–.008 inch metal flake in intercoat clear 25–30 PSI, and .015 inch or larger flake "
+        "start around 30 PSI and go up from there if needed. Measure the pressure AT the gun with "
+        "the trigger fully pulled and air flowing — that reading is the one that matters. Test "
+        "your pattern on a sample panel and adjust gradually until the product atomizes evenly. "
+        "These are starting ranges, not fixed settings: your exact pressure depends on your gun, "
+        "tip size, reducer, temperature and the product, so also follow your spray gun "
+        "manufacturer's pressure limits and the product's technical data sheet.",
     ),
     (
         "Can you make paint by OEM or factory paint code?",
