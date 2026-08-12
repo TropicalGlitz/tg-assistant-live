@@ -271,11 +271,36 @@
       if (box.children.length) { log.appendChild(box); log.scrollTop = log.scrollHeight; }
     }
 
-    function open() {
-      P.dataset.open = "true"; L.setAttribute("aria-expanded", "true"); T.focus();
+    // Recuerda si el chat estaba abierto: al hacer click en un producto y volver,
+    // el cliente lo encuentra tal como lo dejó.
+    function setOpenFlag(v) { try { localStorage.setItem("tg_open", v ? "1" : "0"); } catch (e) {} }
+
+    function open(skipFocus) {
+      P.dataset.open = "true"; L.setAttribute("aria-expanded", "true");
+      if (!skipFocus) T.focus();
+      setOpenFlag(true);
       if (!greeted) { greeted = true; add("m ai", "Welcome back! How may I be of service to you today?"); chips(["Any promotions?", "How much paint do I need?", "Talk to a human"]); }
     }
-    function close() { P.dataset.open = "false"; L.setAttribute("aria-expanded", "false"); L.focus(); }
+    function close() { P.dataset.open = "false"; L.setAttribute("aria-expanded", "false"); L.focus(); setOpenFlag(false); }
+
+    // Repinta la conversación anterior de esta sesión. Sin esto, hacer click en
+    // un producto recomendado navegaba a otra página y el chat volvía vacío.
+    function restore() {
+      return fetch(BACKEND + "/history?session_id=" + encodeURIComponent(SID))
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          var msgs = (j && j.messages) || [];
+          if (!msgs.length) return false;
+          greeted = true; // ya hay conversación: no saludar otra vez
+          msgs.forEach(function (m) {
+            if (m.q) add("m u", m.q);
+            if (m.a) { var d = add("m ai", null); d.innerHTML = mdToHtml(m.a); }
+          });
+          log.scrollTop = log.scrollHeight;
+          return true;
+        })
+        .catch(function () { return false; });
+    }
 
     // Formulario de contacto: el cliente deja sus datos + su pregunta y al enviar
     // se manda un correo a support@ con toda la conversación para que un humano responda.
@@ -374,6 +399,16 @@
     document.getElementById("tg-x").onclick = close;
     F.addEventListener("submit", function (e) { e.preventDefault(); ask(T.value); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && P.dataset.open === "true") close(); });
+
+    // Al cargar la página: recupera la conversación y, si el chat estaba abierto
+    // antes de navegar, vuelve a abrirlo. Así el cliente puede hacer click en un
+    // producto recomendado sin perder el hilo.
+    var wasOpen = false;
+    try { wasOpen = localStorage.getItem("tg_open") === "1"; } catch (e) {}
+    restore().then(function (had) {
+      // Sin foco automático: no robamos el scroll de quien acaba de abrir la página.
+      if (wasOpen && (had || greeted)) open(true);
+    });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
