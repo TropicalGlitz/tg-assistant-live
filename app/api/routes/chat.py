@@ -17,7 +17,12 @@ from pathlib import Path
 import html
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    RedirectResponse,
+    StreamingResponse,
+)
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -735,6 +740,8 @@ def _render_dashboard(
     body = (
         "<h1>Panel de control · Tropical Glitz AI</h1>"
         "<div class='sub'>Métricas y conversaciones del asistente (se actualiza al recargar)</div>"
+        f"<div class='note' style='margin:-8px 0 14px'>🏷️ <a class='link' href='/admin/promos?key={kf}'>"
+        "Administrar códigos de promoción</a></div>"
         f"{date_control}"
         f"<div class='kpis'>{kpi_html}</div>"
         f"{charts_html}"
@@ -798,6 +805,175 @@ async def admin_conversations(
             rows, cur, prev, atc_cur, len(atc_prev), ai_cur, prev_ai,
             daily_conv, daily_atc, key, (f or ""), since, until, range_key,
         )
+    )
+
+
+# ---------------------------------------------------------------------------
+# Panel de códigos de promoción: /admin/promos?key=ADMIN_TOKEN
+# El AI responde que NO hay promoción salvo que aquí haya un código activo.
+# ---------------------------------------------------------------------------
+
+
+async def _form_data(request: Request) -> dict[str, str]:
+    """Lee un POST de formulario (application/x-www-form-urlencoded) sin depender
+    de python-multipart: los formularios del panel son simples campos de texto."""
+    from urllib.parse import parse_qs
+
+    raw = (await request.body()).decode("utf-8", "replace")
+    return {k: (v[0] if v else "") for k, v in parse_qs(raw, keep_blank_values=True).items()}
+
+
+def _promos_page(key: str, rows: list, msg: str = "") -> str:
+    kf = html.escape(key)
+    active_rows = ""
+    past_rows = ""
+    for r in rows:
+        code = (r.get("code") or "").strip()
+        desc = html.escape(r.get("description") or r.get("title") or "")
+        when = _fmt_time(r.get("created_at"))
+        if r.get("active") and code:
+            active_rows += (
+                "<tr>"
+                f"<td><b style='font-size:15px;letter-spacing:.04em'>{html.escape(code)}</b></td>"
+                f"<td>{desc}</td>"
+                f"<td class='n' style='color:#9a9aa2;font-size:12px'>{when}</td>"
+                "<td class='n'>"
+                f"<form method='post' action='/admin/promos/delete' style='margin:0'>"
+                f"<input type='hidden' name='key' value='{kf}'>"
+                f"<input type='hidden' name='promo_id' value='{r['id']}'>"
+                "<button class='del' type='submit'>Desactivar</button>"
+                "</form></td></tr>"
+            )
+        else:
+            past_rows += (
+                f"<tr><td style='color:#9a9aa2'>{html.escape(code) or '—'}</td>"
+                f"<td style='color:#9a9aa2'>{desc}</td>"
+                f"<td class='n' style='color:#b8b8c2;font-size:12px'>{when}</td>"
+                "<td></td></tr>"
+            )
+
+    if active_rows:
+        state = (
+            "<div class='state on'>✅ <b>Hay un código activo.</b> El asistente se lo dará a los "
+            "clientes que pregunten por descuentos y lo mencionará al recomendar productos.</div>"
+        )
+        table = (
+            "<table class='sales'><thead><tr><th>Código</th><th>Descripción</th>"
+            "<th class='n'>Creado</th><th class='n'></th></tr></thead>"
+            f"<tbody>{active_rows}</tbody></table>"
+        )
+    else:
+        state = (
+            "<div class='state off'>⛔ <b>No hay ningún código activo.</b> El asistente le responde "
+            "a todo el que pregunte que no hay código de promoción disponible en este momento.</div>"
+        )
+        table = ""
+
+    past = (
+        "<div class='sec'><h2>Códigos anteriores</h2>"
+        "<table class='sales'><thead><tr><th>Código</th><th>Descripción</th>"
+        f"<th class='n'>Creado</th><th></th></tr></thead><tbody>{past_rows}</tbody></table></div>"
+        if past_rows else ""
+    )
+
+    flash = f"<div class='flash'>{html.escape(msg)}</div>" if msg else ""
+
+    body = (
+        "<h1>Códigos de promoción</h1>"
+        "<div class='sub'>Lo que pongas aquí es lo único que el asistente puede decirle a un "
+        "cliente sobre descuentos. Si está vacío, responde que no hay promoción.</div>"
+        f"{flash}{state}"
+        f"<div class='sec'><h2>Agregar un código</h2>"
+        "<form method='post' action='/admin/promos/add' class='promoform'>"
+        f"<input type='hidden' name='key' value='{kf}'>"
+        "<label>Código<input name='code' placeholder='SUMMER20' maxlength='40' required></label>"
+        "<label>Descripción<input name='description' placeholder='20% de descuento en toda la tienda' maxlength='200'></label>"
+        "<button class='apply' type='submit'>Activar código</button>"
+        "</form>"
+        "<div class='note'>El código queda activo hasta que le des <b>Desactivar</b>. "
+        "El asistente lo escribe tal cual lo pongas aquí.</div></div>"
+        + (f"<div class='sec'><h2>Código activo</h2>{table}</div>" if table else "")
+        + past
+        + f"<div class='note'><a class='link' href='/admin/conversations?key={kf}'>← Volver al panel de conversaciones</a></div>"
+    )
+    extra = (
+        "<style>"
+        ".state{border-radius:14px;padding:14px 16px;margin-bottom:18px;font-size:14px}"
+        ".state.on{background:#dcfce7;color:#166534}"
+        ".state.off{background:#fef3c7;color:#92400e}"
+        ".flash{background:#e0f2fe;color:#075985;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:13px}"
+        ".promoform{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}"
+        ".promoform label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#6b6b74;font-weight:600}"
+        ".promoform input{border:1px solid #d7d7de;border-radius:9px;padding:9px 11px;font-size:14px;min-width:230px}"
+        ".promoform .apply{border:0;background:#ef2c8f;color:#fff;border-radius:9px;padding:11px 18px;"
+        "font-size:14px;font-weight:700;cursor:pointer}"
+        "button.del{border:1px solid #e11d48;color:#e11d48;background:#fff;border-radius:999px;"
+        "padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer}"
+        "button.del:hover{background:#e11d48;color:#fff}"
+        "</style>"
+    )
+    return _admin_page("Promociones — Tropical Glitz", body + extra)
+
+
+@router.get("/admin/promos", response_class=HTMLResponse)
+async def admin_promos(
+    key: str = "", msg: str = "", session: AsyncSession = Depends(get_session)
+) -> HTMLResponse:
+    if not _settings.admin_token:
+        return HTMLResponse(_admin_locked("Falta configurar ADMIN_TOKEN en Render."), status_code=503)
+    if key != _settings.admin_token:
+        return HTMLResponse(
+            _admin_locked("Token inválido. Abre esta página con ?key=TU_TOKEN al final de la URL."),
+            status_code=401,
+        )
+    from app.services import promos
+
+    rows = await promos.list_promos(session)
+    return HTMLResponse(_promos_page(key, rows, msg))
+
+
+@router.post("/admin/promos/add")
+async def admin_promos_add(request: Request, session: AsyncSession = Depends(get_session)):
+    form = await _form_data(request)
+    key = str(form.get("key") or "")
+    if not _settings.admin_token or key != _settings.admin_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
+    from app.services import promos
+
+    code = str(form.get("code") or "").strip()[:40]
+    description = str(form.get("description") or "").strip()[:200]
+    if code:
+        await promos.add_promo(session, code=code, description=description)
+        note = f"Código {code} activado."
+    else:
+        note = "Escribe un código."
+    from urllib.parse import quote
+
+    return RedirectResponse(
+        f"/admin/promos?key={quote(key)}&msg={quote(note)}",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+@router.post("/admin/promos/delete")
+async def admin_promos_delete(request: Request, session: AsyncSession = Depends(get_session)):
+    form = await _form_data(request)
+    key = str(form.get("key") or "")
+    if not _settings.admin_token or key != _settings.admin_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
+    from app.services import promos
+
+    try:
+        promo_id = int(str(form.get("promo_id") or "0"))
+    except ValueError:
+        promo_id = 0
+    if promo_id:
+        await promos.remove_promo(session, promo_id=promo_id)
+    from urllib.parse import quote
+
+    return RedirectResponse(
+        f"/admin/promos?key={quote(key)}&msg={quote('Código desactivado. El asistente vuelve a responder que no hay promoción.')}",
+        status_code=status.HTTP_303_SEE_OTHER,
     )
 
 
