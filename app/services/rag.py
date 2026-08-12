@@ -20,7 +20,7 @@ from app.core.system_prompt import (
     ESCALATION_KEYWORDS,
     SYSTEM_PROMPT,
 )
-from app.services import embeddings, kb_store, orders, vector_store
+from app.services import embeddings, kb_store, orders, promos, vector_store
 
 _settings = get_settings()
 _llm = AsyncAnthropic(api_key=_settings.anthropic_api_key)
@@ -104,14 +104,23 @@ async def retrieve(
     faqs = await kb_store.search_faqs(session, q_vec, top_k=4)
     kb = await kb_store.search_kb(session, q_vec, top_k=3)
     videos = await kb_store.search_videos(session, q_vec, top_k=2)
+    # Códigos de promoción: los controla el dueño desde el panel. Siempre se
+    # incluyen (activos o "ninguno") para que el AI nunca invente un descuento.
+    active_promos = await promos.active_codes(session)
     best = max(
         [h["score"] for h in products] + [f["score"] for f in faqs] + [c["score"] for c in kb] + [0.0]
     )
-    return {"products": products, "faqs": faqs, "kb": kb, "videos": videos, "best_score": best}
+    return {
+        "products": products, "faqs": faqs, "kb": kb, "videos": videos,
+        "promos": active_promos, "best_score": best,
+    }
 
 
 def build_context(hits: dict[str, Any]) -> str:
     blocks: list[str] = []
+    # Estado de promociones SIEMPRE primero: es la única fuente de verdad sobre
+    # descuentos y evita que el modelo invente un código.
+    blocks.append(promos.context_block(hits.get("promos") or []))
     for f in hits["faqs"]:
         if f["score"] >= 0.35:
             blocks.append(json.dumps({"type": "faq", "q": f["question"], "a": f["answer"],
