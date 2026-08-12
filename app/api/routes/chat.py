@@ -85,6 +85,23 @@ async def chat(req: ChatRequest, session: AsyncSession = Depends(get_session)):
     return result
 
 
+@router.get("/suggest")
+async def suggest(page_type: str = "", title: str = "", collection: str = ""):
+    """Saludo y preguntas sugeridas para la página que el cliente está viendo.
+
+    El widget lo llama al abrir el chat con el tipo de página y el título del
+    producto. Son reglas (no LLM): respuesta instantánea, sin costo por token, y
+    se ajustan aquí sin tocar el tema de Shopify. Público: no devuelve nada que
+    no esté ya en la página que el cliente tiene enfrente."""
+    from app.services import suggestions
+
+    return suggestions.suggest(
+        page_type=(page_type or "")[:30],
+        product_title=(title or "")[:200],
+        collection=(collection or "")[:120],
+    )
+
+
 @router.get("/history")
 async def history(session_id: str = "", session: AsyncSession = Depends(get_session)):
     """Historial de la sesión para que el widget REPINTE la conversación cuando el
