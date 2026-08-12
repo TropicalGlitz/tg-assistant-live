@@ -106,7 +106,11 @@ async def retrieve(
     # hojas técnicas (SPI|) y transcripciones de video (YTT|); con 3 una pregunta
     # técnica podía quedarse sin su hoja técnica.
     kb = await kb_store.search_kb(session, q_vec, top_k=4)
-    videos = await kb_store.search_videos(session, q_vec, top_k=2)
+    # top_k=5 candidatos, no 2: la búsqueda por título solo mide parecido de
+    # palabras, así que "how to spray metal flakes" puntúa altísimo el video de
+    # SPRAY CAN aunque el cliente use pistola. Le damos varias opciones al modelo
+    # y que ÉL elija la que de verdad le sirve al cliente (regla en el prompt).
+    videos = await kb_store.search_videos(session, q_vec, top_k=5)
     # Códigos de promoción: los controla el dueño desde el panel. Siempre se
     # incluyen (activos o "ninguno") para que el AI nunca invente un descuento.
     active_promos = await promos.active_codes(session)
@@ -276,7 +280,7 @@ def _sources(hits: dict[str, Any]) -> list[dict[str, Any]]:
         out.append({"source": "faq", "ref": f["question"], "score": round(f["score"], 3)})
     for c in hits["kb"][:2]:
         out.append({"source": "kb", "ref": c["doc_name"], "score": round(c["score"], 3)})
-    for v in hits.get("videos", [])[:2]:
+    for v in hits.get("videos", [])[:5]:
         if v["score"] >= 0.5:
             out.append({"source": "video", "ref": v["text"][:80], "score": round(v["score"], 3)})
     for p in hits["products"][:3]:
