@@ -193,6 +193,44 @@ async def recent_history(
     return msgs
 
 
+async def session_history_public(
+    session: AsyncSession, session_id: str | None, limit: int = 20
+) -> list[dict[str, str]]:
+    """Historial de UNA sesión para repintar el chat cuando el cliente navega a
+    otra página (por ejemplo, hace click en un producto que le recomendó el AI).
+
+    Lo consume el widget del storefront, así que es deliberadamente restrictivo:
+    solo pregunta y respuesta, y se EXCLUYEN las filas del formulario de contacto,
+    que llevan el email y el teléfono del cliente dentro del campo `message`.
+    """
+    if not session_id:
+        return []
+    await _ensure(session)
+    try:
+        rows = (
+            await session.execute(
+                text(
+                    """
+                    SELECT message, answer FROM chat_logs
+                    WHERE session_id = :sid
+                      AND message NOT LIKE '[Contact request]%'
+                    ORDER BY created_at DESC
+                    LIMIT :n
+                    """
+                ),
+                {"sid": session_id, "n": limit},
+            )
+        ).mappings().all()
+    except Exception:  # noqa: BLE001
+        _log.exception("No se pudo leer el historial público de la sesión")
+        return []
+    return [
+        {"q": r["message"] or "", "a": r["answer"] or ""}
+        for r in reversed(rows)
+        if (r["message"] or "").strip()
+    ]
+
+
 async def session_transcript(
     session: AsyncSession, session_id: str | None, limit: int = 200
 ) -> list[dict[str, str]]:
