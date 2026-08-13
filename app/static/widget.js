@@ -62,13 +62,19 @@
   var CSS =
     '#tg-w *{box-sizing:border-box}' +
     '#tg-w{--tg:#ef2c8f;--tg2:#f3f3f3;--tgt:#1b1b1f;--tgm:#6b6b74;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}' +
-    '#tg-launch{position:fixed;right:20px;bottom:20px;width:62px;height:60px;border-radius:20px 20px 20px 6px;border:0;background:#fff;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.22);display:grid;place-items:center;padding:0;z-index:2147483000;transition:transform .18s}' +
-    '#tg-launch::after{content:"";position:absolute;left:13px;bottom:-6px;width:0;height:0;border:7px solid transparent;border-top-color:#fff;border-bottom:0}' +
-    '#tg-launch img{width:46px;height:46px;object-fit:contain;border-radius:50%;display:block;pointer-events:none}' +
-    '#tg-launch:hover{transform:scale(1.06)}' +
+    // Botón: círculo rosado de marca con el icono clásico de chat. Antes era una
+    // burbuja blanca con el logo de la palma y los clientes lo leían como un logo,
+    // no como "aquí se chatea".
+    '#tg-launch{position:fixed;right:20px;bottom:20px;width:60px;height:60px;border-radius:50%;border:0;background:var(--tg);cursor:pointer;box-shadow:0 10px 26px rgba(239,44,143,.36);display:grid;place-items:center;padding:0;z-index:2147483000;transition:transform .18s,box-shadow .18s}' +
+    '#tg-launch svg{width:29px;height:29px;display:block;pointer-events:none}' +
+    '#tg-launch:hover{transform:scale(1.06);box-shadow:0 12px 30px rgba(239,44,143,.46)}' +
+    '#tg-launch:focus-visible{outline:3px solid #fff;outline-offset:3px}' +
+    // Un solo rebote a los ~8s si todavía no abrió el chat: llama el ojo sin insistir.
+    '@keyframes tg-bounce{0%,100%{transform:translateY(0)}25%{transform:translateY(-9px)}45%{transform:translateY(0)}62%{transform:translateY(-4px)}80%{transform:translateY(0)}}' +
+    '#tg-launch[data-nudge="1"]{animation:tg-bounce 1.15s ease-in-out 1}' +
     '#tg-panel{position:fixed;right:20px;bottom:20px;width:min(400px,calc(100vw - 32px));height:min(640px,calc(100vh - 40px));background:#fff;color:var(--tgt);border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.22);display:flex;flex-direction:column;overflow:hidden;z-index:2147483001;opacity:0;transform:translateY(12px) scale(.98);pointer-events:none;transition:opacity .2s,transform .2s}' +
     '#tg-panel[data-open="true"]{opacity:1;transform:none;pointer-events:auto}' +
-    '@media (prefers-reduced-motion:reduce){#tg-panel,#tg-launch{transition:none}}' +
+    '@media (prefers-reduced-motion:reduce){#tg-panel,#tg-launch{transition:none}#tg-launch[data-nudge="1"]{animation:none}}' +
     '#tg-w .h{background:var(--tg);color:#fff;padding:16px 18px;display:flex;align-items:center;gap:12px}' +
     '#tg-w .av{width:40px;height:40px;border-radius:50%;background:#fff;display:grid;place-items:center;overflow:hidden}' +
     '#tg-w .av img{width:34px;height:34px;object-fit:contain}' +
@@ -120,8 +126,20 @@
     '#tg-form button{width:42px;height:42px;border-radius:50%;border:0;background:var(--tg);color:#fff;cursor:pointer;font-size:17px}' +
     '#tg-w .ft{text-align:center;font-size:10px;color:#b8b8c2;padding:6px}';
 
+  // Icono clásico de burbuja de chat (SVG en línea: no depende de descargar una
+  // imagen, así que aparece al instante y se ve nítido en cualquier pantalla).
+  var ICON_CHAT =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-4.2-.9L3 21l1.9-4.6' +
+    'A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z"/></svg>';
+  var ICON_CLOSE =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" ' +
+    'stroke-linecap="round" aria-hidden="true">' +
+    '<path d="M6 6l12 12M18 6L6 18"/></svg>';
+
   var HTML =
-    '<button id="tg-launch" aria-label="Open support chat" aria-expanded="false"><img alt="Chat" src="' + LOGO + '"></button>' +
+    '<button id="tg-launch" aria-label="Open support chat" aria-expanded="false">' + ICON_CHAT + '</button>' +
     '<section id="tg-panel" role="dialog" aria-modal="false" aria-label="Tropical Glitz AI Support" data-open="false">' +
       '<div class="h"><div class="av"><img alt="" src="' + LOGO + '"></div><div><h2>Tropical Glitz AI Support</h2><span>Here to help you shop</span></div>' +
       '<button class="x" id="tg-x" aria-label="Close">✕</button></div>' +
@@ -349,8 +367,17 @@
         .catch(function () { SUG = {}; return SUG; });
     }
 
+    // El botón muestra la burbuja de chat cuando está cerrado y una X cuando está
+    // abierto, para que se entienda que el mismo botón cierra el panel.
+    function paintLauncher(isOpen) {
+      L.innerHTML = isOpen ? ICON_CLOSE : ICON_CHAT;
+      L.setAttribute("aria-label", isOpen ? "Close support chat" : "Open support chat");
+    }
+
     function open(skipFocus) {
       P.dataset.open = "true"; L.setAttribute("aria-expanded", "true");
+      paintLauncher(true);
+      stopNudge();
       if (!skipFocus) T.focus();
       setOpenFlag(true);
       if (greeted) return;
@@ -366,7 +393,31 @@
         log.scrollTop = log.scrollHeight;
       });
     }
-    function close() { P.dataset.open = "false"; L.setAttribute("aria-expanded", "false"); L.focus(); setOpenFlag(false); }
+    function close() {
+      P.dataset.open = "false"; L.setAttribute("aria-expanded", "false");
+      paintLauncher(false); L.focus(); setOpenFlag(false);
+    }
+
+    // Un solo rebote a los ~8 segundos, y nunca más en toda la visita: si el
+    // cliente ya abrió el chat alguna vez, no rebota. La idea es que el ojo lo
+    // encuentre, no perseguirlo.
+    var nudgeTimer = null;
+    function stopNudge() {
+      if (nudgeTimer) { clearTimeout(nudgeTimer); nudgeTimer = null; }
+      L.removeAttribute("data-nudge");
+      try { sessionStorage.setItem("tg_nudged", "1"); } catch (e) {}
+    }
+    function scheduleNudge() {
+      var already = false;
+      try { already = sessionStorage.getItem("tg_nudged") === "1"; } catch (e) {}
+      if (already) return;
+      nudgeTimer = setTimeout(function () {
+        if (P.dataset.open === "true") return;
+        try { sessionStorage.setItem("tg_nudged", "1"); } catch (e) {}
+        L.setAttribute("data-nudge", "1");
+        setTimeout(function () { L.removeAttribute("data-nudge"); }, 1400);
+      }, 8000);
+    }
 
     // Repinta la conversación anterior de esta sesión. Sin esto, hacer click en
     // un producto recomendado navegaba a otra página y el chat volvía vacío.
@@ -494,6 +545,7 @@
     restore().then(function (had) {
       // Sin foco automático: no robamos el scroll de quien acaba de abrir la página.
       if (wasOpen && (had || greeted)) open(true);
+      else scheduleNudge();
     });
   }
 
