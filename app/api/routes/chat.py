@@ -200,6 +200,60 @@ async def ingest_kb(key: str = ""):
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)[:300])
 
 
+@router.get("/admin/register-webhooks")
+async def register_webhooks(key: str = ""):
+    """Registra en Shopify los webhooks de órdenes (idempotente).
+
+    Necesario para que las ventas del AI se capturen EN EL MOMENTO de la compra.
+    Corre en el servidor con el token que ya vive en las variables de entorno:
+    la credencial nunca sale de Render. Shopify ignora duplicados por
+    (topic, address), así que se puede llamar las veces que haga falta."""
+    if not _settings.admin_token or key != _settings.admin_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
+    import httpx
+
+    base = "https://tg-assistant-ie5p.onrender.com"
+    topics = {
+        "orders/create": "/webhooks/shopify/orders-create",
+        "orders/updated": "/webhooks/shopify/orders-updated",
+    }
+    api = (
+        f"https://{_settings.shopify_shop_domain}"
+        f"/admin/api/{_settings.shopify_api_version}"
+    )
+    headers = {
+        "X-Shopify-Access-Token": _settings.shopify_admin_token,
+        "Content-Type": "application/json",
+    }
+    results = []
+    async with httpx.AsyncClient(headers=headers, timeout=30) as client:
+        for topic, path in topics.items():
+            try:
+                r = await client.post(
+                    f"{api}/webhooks.json",
+                    json={"webhook": {"topic": topic, "address": base + path, "format": "json"}},
+                )
+                body = r.json()
+                if r.status_code in (200, 201):
+                    results.append({"topic": topic, "status": "registrado"})
+                elif "already been taken" in str(body):
+                    results.append({"topic": topic, "status": "ya estaba registrado"})
+                else:
+                    results.append({"topic": topic, "status": f"error {r.status_code}", "detail": str(body)[:200]})
+            except Exception as e:  # noqa: BLE001
+                results.append({"topic": topic, "status": "error", "detail": str(e)[:200]})
+        # Lista final para confirmar qué quedó activo
+        try:
+            r = await client.get(f"{api}/webhooks.json")
+            active = [
+                {"topic": w.get("topic"), "address": w.get("address")}
+                for w in r.json().get("webhooks", [])
+            ]
+        except Exception:  # noqa: BLE001
+            active = []
+    return {"ok": True, "resultado": results, "webhooks_activos": active}
+
+
 @router.get("/admin/ingest-videos")
 async def ingest_videos(key: str = ""):
     """(Re)ingiere el catálogo de videos del canal de YouTube en segundo plano.
