@@ -179,6 +179,23 @@
     function isContactChip(t) { return /talk to a human|contact a representative|contact support/i.test(t); }
     function chips(list) { C.innerHTML = ""; (list || []).forEach(function (t) { var b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.textContent = t; b.onclick = function () { if (isContactChip(t)) openContact(); else ask(t); }; C.appendChild(b); }); }
 
+    // Clicks en los videos que recomienda el AI. Delegación en el contenedor:
+    // se engancha UNA vez y cubre también los mensajes repintados al restaurar
+    // la conversación, sin volver a enganchar nada.
+    var YT_RE = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([A-Za-z0-9_-]{6,20})/;
+    function trackVideoClicks() {
+      log.addEventListener("click", function (e) {
+        var a = e.target && e.target.closest ? e.target.closest("a") : null;
+        if (!a || !a.href) return;
+        var m = YT_RE.exec(a.href);
+        if (!m) return;
+        logEvent("video_click", {
+          title: (a.textContent || "").trim().slice(0, 200),
+          variant_id: m[1]
+        });
+      }, true);
+    }
+
     // Registra un evento ligero en el backend para el panel de control (embudo).
     function logEvent(type, data) {
       try {
@@ -467,6 +484,7 @@
     document.getElementById("tg-x").onclick = close;
     F.addEventListener("submit", function (e) { e.preventDefault(); ask(T.value); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && P.dataset.open === "true") close(); });
+    trackVideoClicks();
 
     // Al cargar la página: recupera la conversación y, si el chat estaba abierto
     // antes de navegar, vuelve a abrirlo. Así el cliente puede hacer click en un
