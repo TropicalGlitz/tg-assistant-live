@@ -21,6 +21,10 @@ TOPICS = {
     "products/create": "/webhooks/shopify/products-create",
     "products/update": "/webhooks/shopify/products-update",
     "products/delete": "/webhooks/shopify/products-delete",
+    # Ventas atribuidas al AI: capturar en el momento evita depender del escaneo
+    # paginado del historial (que con el volumen real de la tienda subestimaba).
+    "orders/create": "/webhooks/shopify/orders-create",
+    "orders/updated": "/webhooks/shopify/orders-updated",
 }
 
 
