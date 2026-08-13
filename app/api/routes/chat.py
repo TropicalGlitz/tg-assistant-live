@@ -549,7 +549,11 @@ def _donut(parts: list, size: int = 150) -> str:
 def _render_dashboard(
     rows, cur, prev, atc_cur, atc_prev_count, ai, prev_ai,
     daily_conv, daily_atc, key, f, since, until, range_key,
+    vid=None, prev_vid=None, daily_vid=None,
 ) -> str:
+    vid = vid or {"clicks": 0, "sessions": 0, "top": []}
+    prev_vid = prev_vid or {"clicks": 0}
+    daily_vid = daily_vid or []
     ai_orders = [o for o in ai.get("orders", []) if not o.get("cancelled")]
     purchased_sessions = {o["session_id"] for o in ai_orders if o.get("session_id")}
     session_rev: dict[str, float] = {}
@@ -604,6 +608,7 @@ def _render_dashboard(
         ("kpi", str(atc_count), "Agregaron al carrito", _delta_html(atc_count, atc_prev_count)),
         ("kpi", str(len(ai_orders)), "Ventas del AI", _delta_html(len(ai_orders), prev_ai.get("count", 0))),
         ("kpi money", _money(ai_revenue), "Ingresos del AI", _delta_html(ai_revenue, prev_ai.get("revenue", 0))),
+        ("kpi", str(vid.get("clicks", 0)), "Clicks en videos", _delta_html(vid.get("clicks", 0), prev_vid.get("clicks", 0))),
     ]
     kpi_html = "".join(
         f"<div class='{cls}'><b>{html.escape(val)}</b><span>{lbl}</span>{delta}</div>"
@@ -640,13 +645,53 @@ def _render_dashboard(
         if atc_total > 0
         else "<div class='note'>Aún no hay datos de carrito en este rango.</div>"
     )
+    vid_points = _fill(daily_vid, "total")
+    vid_total = sum(v for _, v in vid_points)
+    vid_chart = (
+        _bar_chart(vid_points, color="#e11d48")
+        if vid_total > 0
+        else "<div class='note'>Todavía nadie ha abierto un video recomendado en este rango.</div>"
+    )
     charts_html = (
         "<div class='charts'>"
         "<div class='sec'><h2>Conversaciones por día</h2>" + conv_chart + "</div>"
         "<div class='sec'><h2>Resueltas por AI vs. humano</h2>" + donut + "</div>"
         "</div>"
         "<div class='sec'><h2>Agregados al carrito por día</h2>" + atc_chart + "</div>"
+        "<div class='sec'><h2>Clicks en videos de YouTube por día</h2>" + vid_chart + "</div>"
     )
+
+    # --- Videos que el AI recomendó y el cliente SÍ abrió ---
+    top_vids = vid.get("top") or []
+    if not top_vids:
+        videos_html = (
+            "<div class='note'>Aún no hay clicks en videos. Aparecerán aquí en cuanto un "
+            "cliente abra un video que el asistente le recomendó en el chat.</div>"
+        )
+    else:
+        vtrs = ""
+        for v in top_vids:
+            t = html.escape(str(v.get("title") or "Video"))
+            vidid = str(v.get("video_id") or "").strip()
+            link = (
+                f"<a class='link' href='https://youtu.be/{html.escape(vidid)}' target='_blank' rel='noopener'>{t}</a>"
+                if vidid else t
+            )
+            vtrs += (
+                "<tr>"
+                f"<td>{link}</td>"
+                f"<td class='n'>{int(v.get('clicks') or 0)}</td>"
+                f"<td class='n'>{int(v.get('sessions') or 0)}</td>"
+                f"<td class='n' style='color:#9a9aa2;font-size:12px'>{_fmt_time(v.get('last_click'))}</td>"
+                "</tr>"
+            )
+        videos_html = (
+            f"<div class='note' style='margin:0 0 10px'>{vid.get('clicks', 0)} clicks de "
+            f"{vid.get('sessions', 0)} visitante(s) distinto(s) en este rango.</div>"
+            "<table class='sales'><thead><tr><th>Video</th><th class='n'>Clicks</th>"
+            "<th class='n'>Visitantes</th><th class='n'>Último click</th></tr></thead>"
+            f"<tbody>{vtrs}</tbody></table>"
+        )
 
     # --- Embudo ---
     funnel = [
@@ -778,6 +823,7 @@ def _render_dashboard(
         f"{charts_html}"
         f"<div class='sec'><h2>Embudo de conversión</h2><div class='funnel'>{funnel_html}</div></div>"
         f"<div class='sec'><h2>Ventas generadas por el AI</h2>{sales_html}</div>"
+        f"<div class='sec'><h2>🎬 Videos más vistos desde el chat</h2>{videos_html}</div>"
         "<h2 style='font-size:16px;margin:0 0 10px'>Conversaciones</h2>"
         f"<div class='filters'>{filters}</div>"
         f"{sessions_html}"
@@ -813,6 +859,9 @@ async def admin_conversations(
     atc_prev = await events.sessions_with_add_to_cart(session, since=prev_since, until=prev_until)
     daily_conv = await conversations.daily_series(session, since, until)
     daily_atc = await events.daily_add_to_cart(session, since, until)
+    vid = await events.video_click_stats(session, since=since, until=until)
+    prev_vid = await events.video_click_stats(session, since=prev_since, until=prev_until)
+    daily_vid = await events.daily_video_clicks(session, since, until)
     try:
         ai_all = await orders.ai_attributed_orders(since=prev_since, until=until)
     except Exception:  # noqa: BLE001
@@ -835,6 +884,7 @@ async def admin_conversations(
         _render_dashboard(
             rows, cur, prev, atc_cur, len(atc_prev), ai_cur, prev_ai,
             daily_conv, daily_atc, key, (f or ""), since, until, range_key,
+            vid, prev_vid, daily_vid,
         )
     )
 
