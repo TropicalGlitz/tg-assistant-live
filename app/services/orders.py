@@ -303,3 +303,26 @@ async def ai_attributed_orders(
         )
     out.sort(key=lambda x: x["created_at"], reverse=True)
     return {"orders": out, "truncated": truncated}
+
+
+async def fetch_order(order_id: str) -> dict[str, Any] | None:
+    """Trae UNA orden por id desde la Admin API, con nuestro propio token.
+
+    Se usa para verificar webhooks cuando la firma HMAC no valida: en vez de
+    confiar en el cuerpo que llegó, le preguntamos a Shopify por esa orden y
+    trabajamos con la respuesta autoritativa. Un cuerpo falsificado no sirve de
+    nada: como máximo nos haría releer una orden real de la tienda.
+    """
+    oid = "".join(ch for ch in str(order_id or "") if ch.isdigit())
+    if not oid:
+        return None
+    api = f"https://{_settings.shopify_shop_domain}/admin/api/{_settings.shopify_api_version}"
+    headers = {"X-Shopify-Access-Token": _settings.shopify_admin_token}
+    try:
+        async with httpx.AsyncClient(headers=headers, timeout=20) as client:
+            r = await client.get(f"{api}/orders/{oid}.json", params={"status": "any"})
+            if r.status_code != 200:
+                return None
+            return r.json().get("order")
+    except Exception:  # noqa: BLE001
+        return None
