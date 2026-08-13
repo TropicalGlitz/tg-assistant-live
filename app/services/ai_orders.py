@@ -183,3 +183,72 @@ async def count_all(session: AsyncSession) -> int:
         return int(row[0]) if row else 0
     except Exception:  # noqa: BLE001
         return 0
+
+
+async def backfill(
+    session: AsyncSession, *, days: int = 120, max_pages: int = 40
+) -> dict[str, Any]:
+    """Rellena `ai_orders` con el historial que Shopify todavía nos deja leer.
+
+    El webhook cubre de aquí en adelante; esto recupera lo de antes. Se recorre
+    página por página (250 órdenes cada una) y se guardan SOLO las del chat, sin
+    acumular nada en memoria: la instancia tiene 512MB y el historial es largo.
+    """
+    import datetime as _dt
+
+    import httpx
+
+    from app.core.config import get_settings
+    from app.services.orders import _next_link  # noqa: PLC2701
+
+    settings = get_settings()
+    await ensure_table(session)
+    api = (
+        f"https://{settings.shopify_shop_domain}"
+        f"/admin/api/{settings.shopify_api_version}"
+    )
+    headers = {"X-Shopify-Access-Token": settings.shopify_admin_token}
+    since = _dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(days=days)
+    params = {
+        "status": "any",
+        "limit": "250",
+        "created_at_min": since.isoformat(),
+        "fields": (
+            "id,name,created_at,total_price,current_total_price,financial_status,"
+            "cancelled_at,line_items,note_attributes,currency"
+        ),
+    }
+    scanned = 0
+    stored = 0
+    pages = 0
+    truncated = False
+    url: str | None = f"{api}/orders.json"
+    async with httpx.AsyncClient(headers=headers, timeout=60) as client:
+        while url and pages < max_pages:
+            r = await client.get(url, params=params if pages == 0 else None)
+            r.raise_for_status()
+            batch = r.json().get("orders", [])
+            scanned += len(batch)
+            for o in batch:
+                row = parse_order(o)
+                if not row:
+                    continue
+                try:
+                    await upsert(session, row)
+                    stored += 1
+                except Exception:  # noqa: BLE001
+                    _log.exception("No se pudo guardar la orden %s en el backfill", row.get("order_name"))
+            pages += 1
+            url = _next_link(r.headers.get("link", ""))
+        if url:
+            truncated = True
+    total = await count_all(session)
+    _log.info("Backfill de órdenes del AI: %s escaneadas, %s guardadas", scanned, stored)
+    return {
+        "scanned": scanned,
+        "stored": stored,
+        "pages": pages,
+        "truncated": truncated,
+        "total_en_tabla": total,
+        "dias": days,
+    }
