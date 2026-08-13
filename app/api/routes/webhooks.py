@@ -14,11 +14,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.security import hmac_debug, match_webhook_secret
 from app.db.session import get_session
-from app.services import ai_orders, ingest, vector_store
+from app.services import ai_orders, ingest, orders, vector_store
 
 _log = logging.getLogger("webhooks")
 router = APIRouter(prefix="/webhooks/shopify", tags=["webhooks"])
 _settings = get_settings()
+
+# Cuántos webhooks llegaron con firma que no valida (para no inundar el log).
+_hmac_fail_count = 0
 
 
 async def _verified_body(
@@ -95,8 +98,10 @@ async def products_delete(
 @router.post("/orders-create", status_code=status.HTTP_200_OK)
 @router.post("/orders-updated", status_code=status.HTTP_200_OK)
 async def orders_upsert(
-    payload: dict = Depends(_verified_body),
+    request: Request,
     session: AsyncSession = Depends(get_session),
+    x_shopify_hmac_sha256: str | None = Header(default=None),
+    x_shopify_shop_domain: str | None = Header(default=None),
 ):
     """Captura la orden EN EL MOMENTO de la compra si viene del chat.
 
@@ -106,8 +111,68 @@ async def orders_upsert(
 
     Las órdenes que NO vienen del chat (la mayoría) se ignoran: solo respondemos
     200 para que Shopify no reintente.
+
+    DOBLE VÍA DE AUTENTICACIÓN. Lo normal es validar el HMAC. Pero si el secreto
+    configurado no es el que firma (pasa cuando el webhook lo creó una app cuya
+    API secret key no está en las variables de entorno), en vez de perder la
+    venta hacemos *verificación por devolución de llamada*: le pedimos esa orden
+    a Shopify con nuestro propio token y guardamos LO QUE SHOPIFY RESPONDE, no lo
+    que llegó en el cuerpo. Un cuerpo falsificado no aporta nada — a lo sumo nos
+    haría releer una orden real de la tienda.
     """
-    row = ai_orders.parse_order(payload)
+    global _hmac_fail_count
+    raw = await request.body()
+    topic = request.headers.get("x-shopify-topic", "?")
+    matched = match_webhook_secret(
+        raw,
+        x_shopify_hmac_sha256,
+        webhook=_settings.shopify_webhook_secret,
+        api=_settings.shopify_api_secret,
+    )
+    try:
+        payload = json.loads(raw)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Bad body")
+
+    if matched:
+        if x_shopify_shop_domain and x_shopify_shop_domain != _settings.shopify_shop_domain:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unknown shop")
+        row = ai_orders.parse_order(payload)
+    else:
+        _hmac_fail_count += 1
+        if _hmac_fail_count % 50 == 1:
+            _log.warning(
+                "Firma HMAC inválida en %s (van %s). Se está usando verificación por "
+                "Admin API como respaldo. Para volver a la vía normal, pon en Render "
+                "SHOPIFY_WEBHOOK_SECRET = API secret key de la app que creó el webhook. "
+                "hdr=%s body=%sB recibido=%s calc=%s",
+                topic,
+                _hmac_fail_count,
+                "sí" if x_shopify_hmac_sha256 else "NO",
+                len(raw),
+                (x_shopify_hmac_sha256 or "")[:10],
+                hmac_debug(
+                    raw,
+                    webhook=_settings.shopify_webhook_secret,
+                    api=_settings.shopify_api_secret,
+                ),
+            )
+        # Sin firma válida no confiamos en el cuerpo. Solo vale la pena molestar a
+        # la Admin API si el cuerpo dice ser una orden del chat (son minoría).
+        if not ai_orders.parse_order(payload):
+            return {"ok": True, "attributed": False, "verified": False}
+        authoritative = await orders.fetch_order(str(payload.get("id") or ""))
+        if authoritative is None:
+            _log.warning("Webhook sin firma válida y la orden no existe en Shopify: se descarta")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unverified")
+        row = ai_orders.parse_order(authoritative)
+        if row:
+            _log.info(
+                "Orden del AI verificada contra la Admin API (topic=%s, orden=%s)",
+                topic,
+                row.get("order_name"),
+            )
+
     if not row:
         return {"ok": True, "attributed": False}
     try:
