@@ -6,15 +6,17 @@ buffer, antes de cualquier json.loads. Nunca uses el body ya parseado para el HM
 from __future__ import annotations
 
 import json
+import logging
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.security import verify_webhook_hmac
+from app.core.security import hmac_debug, match_webhook_secret
 from app.db.session import get_session
 from app.services import ai_orders, ingest, vector_store
 
+_log = logging.getLogger("webhooks")
 router = APIRouter(prefix="/webhooks/shopify", tags=["webhooks"])
 _settings = get_settings()
 
@@ -25,10 +27,43 @@ async def _verified_body(
     x_shopify_shop_domain: str | None = Header(default=None),
 ) -> dict:
     raw = await request.body()
-    if not verify_webhook_hmac(raw, x_shopify_hmac_sha256, _settings.shopify_webhook_secret):
+    topic = request.headers.get("x-shopify-topic", "?")
+    # Se prueban ambos secretos: el dedicado de webhooks y el API secret de la app.
+    # Shopify firma con uno u otro según cómo se creó el webhook (API vs. panel).
+    matched = match_webhook_secret(
+        raw,
+        x_shopify_hmac_sha256,
+        webhook=_settings.shopify_webhook_secret,
+        api=_settings.shopify_api_secret,
+    )
+    if not matched:
+        # Diagnóstico SIN filtrar secretos: solo si la cabecera llegó, el tamaño
+        # del body y los primeros caracteres de las firmas (la firma viaja en
+        # claro en la cabecera, no es material sensible).
+        _log.warning(
+            "Webhook RECHAZADO por HMAC (topic=%s) hdr=%s body=%sB recibido=%s calc=%s | "
+            "Ninguno de los secretos configurados firma este webhook: pon en Render "
+            "SHOPIFY_WEBHOOK_SECRET = API secret key de la app que creó el webhook.",
+            topic,
+            "sí" if x_shopify_hmac_sha256 else "NO",
+            len(raw),
+            (x_shopify_hmac_sha256 or "")[:10],
+            hmac_debug(
+                raw,
+                webhook=_settings.shopify_webhook_secret,
+                api=_settings.shopify_api_secret,
+            ),
+        )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid HMAC")
     if x_shopify_shop_domain and x_shopify_shop_domain != _settings.shopify_shop_domain:
+        _log.warning(
+            "Webhook RECHAZADO por tienda desconocida: llegó %r, esperábamos %r (topic=%s)",
+            x_shopify_shop_domain,
+            _settings.shopify_shop_domain,
+            topic,
+        )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unknown shop")
+    _log.info("Webhook OK (topic=%s, firma=%s)", topic, matched)
     return json.loads(raw)
 
 
