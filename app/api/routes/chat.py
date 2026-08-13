@@ -200,6 +200,27 @@ async def ingest_kb(key: str = ""):
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)[:300])
 
 
+@router.get("/admin/backfill-ai-orders")
+async def backfill_ai_orders(
+    key: str = "",
+    days: int = 120,
+    session: AsyncSession = Depends(get_session),
+):
+    """Importa a la tabla `ai_orders` las ventas del chat que ya ocurrieron.
+
+    El webhook captura de aquí en adelante; esto recupera el historial que la
+    Admin API todavía deja leer, para que el panel deje de subestimar las ventas
+    en las vistas de 30 y 90 días. Es idempotente: se puede correr las veces que
+    haga falta sin duplicar nada.
+    """
+    if not _settings.admin_token or key != _settings.admin_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
+    try:
+        return {"ok": True, **(await ai_orders.backfill(session, days=days))}
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)[:300])
+
+
 @router.get("/admin/register-webhooks")
 async def register_webhooks(key: str = ""):
     """Registra en Shopify los webhooks de órdenes (idempotente).
