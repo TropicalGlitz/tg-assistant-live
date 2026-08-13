@@ -31,7 +31,7 @@ from fastapi import Response
 from app.core.config import get_settings
 from app.core.security import verify_app_proxy_signature
 from app.db.session import get_session
-from app.services import conversations, events, mailer, orders, proactive, rag
+from app.services import ai_orders, conversations, events, mailer, orders, proactive, rag
 
 router = APIRouter(tags=["chat"])
 _settings = get_settings()
@@ -726,7 +726,13 @@ def _render_dashboard(
                 "</tr>"
             )
         total_all = sum(float(o.get("total") or 0) for o in ai_orders)
-        trunc = "<div class='note'>Mostrando las órdenes más recientes; hay más historial disponible.</div>" if ai.get("truncated") else ""
+        trunc = (
+            "<div class='note'>⚠️ Estas cifras vienen del escaneo del historial de Shopify, que "
+            "tiene un tope de órdenes: con el volumen de la tienda puede quedarse corto en rangos "
+            "largos, así que las ventas del AI aquí son un MÍNIMO, no el total. Las órdenes nuevas "
+            "se capturan exactas por webhook.</div>"
+            if ai.get("truncated") else ""
+        )
         sales_html = (
             "<table class='sales'><thead><tr>"
             "<th>Orden</th><th>Fecha</th><th>Cliente</th><th>Pago</th>"
@@ -862,10 +868,21 @@ async def admin_conversations(
     vid = await events.video_click_stats(session, since=since, until=until)
     prev_vid = await events.video_click_stats(session, since=prev_since, until=prev_until)
     daily_vid = await events.daily_video_clicks(session, since, until)
-    try:
-        ai_all = await orders.ai_attributed_orders(since=prev_since, until=until)
-    except Exception:  # noqa: BLE001
-        ai_all = {"orders": [], "truncated": False, "error": True}
+    # Ventas del AI: la tabla local (alimentada por el webhook orders/create) es
+    # la fuente exacta. El escaneo por Admin API queda como respaldo para el
+    # historial anterior al webhook — tiene tope de páginas y con el volumen de
+    # esta tienda no alcanza a cubrir rangos largos (ver auditoría).
+    captured = await ai_orders.count_all(session)
+    local_orders = await ai_orders.fetch_range(session, prev_since, until)
+    if local_orders:
+        ai_all = {"orders": local_orders, "truncated": False, "error": False, "source": "webhook"}
+    else:
+        try:
+            ai_all = await orders.ai_attributed_orders(since=prev_since, until=until)
+            ai_all["source"] = "api"
+        except Exception:  # noqa: BLE001
+            ai_all = {"orders": [], "truncated": False, "error": True, "source": "api"}
+    ai_all["captured"] = captured
 
     since_day = since.date().isoformat()
     all_orders = ai_all.get("orders", [])
