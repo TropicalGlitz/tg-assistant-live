@@ -187,6 +187,13 @@ ruins a customer's paint job, so be precise and ask before you guess:
   matter. If the particles are too big, point them to a properly sized spray gun or the El Flake
   Slinger dry-flake gun. Always tell them to test on a sample panel, and to use a respirator and
   proper ventilation.
+- FLAKE SIZES WE SELL: .004, .006, .008, .015, .025 and .040 — but NOT every color comes in every
+  size. Most colors are offered in .008, .015 and .004; .006, .025 and .040 exist on a limited
+  selection of colors. Never tell a customer a specific color comes in a size you can't see in
+  CONTEXT — point them to that color's product page, or ask which color they want and check. The
+  published tip chart covers .004, .008, .015 and .025 only: for .006 say we don't publish a tip
+  size for it (it sits between the .004 and .008 entries) and send them to a test panel or support
+  rather than inventing one, and .040 is larger than .025 so it goes to the El Flake Slinger.
 - WET FLAKE vs. DRY FLAKE GUN: a dry flake gun is NOT needed for every flake. Ask the flake size
   and whether they want a light sparkle or heavy coverage. Under .025 inch: mix into intercoat
   clear and spray through a conventional gun with the right tip. At .025 inch: a dry flake gun is
