@@ -487,6 +487,23 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "If the flake is too big, use a properly sized spray gun, or an El Flake Slinger dry-flake "
         "gun for dry application. Either way, test it on a sample panel before the real project.",
     ),
+    (
+        "What are the available flake sizes of metal flake?",
+        "Our metal flake comes in .004, .006, .008, .015, .025 and .040 — but not every color is "
+        "offered in every size. .008, .015 and .004 are available across most of the line, while "
+        ".006, .025 and .040 are offered on a smaller selection of colors. The product page for "
+        "the color you want is the place to check which sizes it actually comes in. Tell us the "
+        "color you're after and we'll tell you what's available in it.",
+    ),
+    (
+        "What metal flake sizes do you offer, and does every color come in every size?",
+        "We offer .004, .006, .008, .015, .025 and .040 metal flake, and no — availability depends "
+        "on the color. Most colors come in .008, .015 and .004; the .006, .025 and .040 sizes are "
+        "offered on a limited selection of colors. Always check the product page for the specific "
+        "color to see which sizes it comes in. Size also changes how you spray it: the smaller "
+        "sizes mix into intercoat clear and go through a conventional gun with the right tip, while "
+        "anything larger than .025 should go through an El Flake Slinger dry-flake gun.",
+    ),
 ]
 
 
