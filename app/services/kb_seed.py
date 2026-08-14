@@ -456,6 +456,37 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "wrinkling, solvent pop, peeling or delamination, stop and contact us. And if you're using an "
         "SPI clear, follow that clear's SPI technical data sheet for its coats, flash and cure times.",
     ),
+    # --- Correcciones de entradas heredadas del sistema anterior (REP) ---
+    # Se repiten las preguntas EXACTAS para que el upsert reemplace la respuesta
+    # vieja: decían .040 para el flake gun seco y descartaban el flake en
+    # aerógrafo de plano, y eso ya no coincide con la guía aprobada.
+    (
+        "Flake bigger than .004 → dry flake gun?",
+        "No — bigger than .004 doesn't automatically call for a dry flake gun. Fine and many "
+        "medium flakes mix into intercoat clear and spray through a conventional gun with the "
+        "right tip size. A dry flake gun starts to make sense at .025 inch, and for flake larger "
+        "than .025 inch use an El Flake Slinger dry-flake gun. It's also the easier route any "
+        "time you want really heavy coverage, whatever the size.",
+    ),
+    (
+        "Biggest flake for 2.0 flake gun?",
+        "A 2.0mm tip handles .004, .008 and .015 flake mixed into intercoat clear. At .015 you're "
+        "at the top of its range — 2.0 to 2.5mm both work there, and the 2.5mm passes it more "
+        "easily with less chance of clogging. For .025 inch go to the 2.5mm tip, and above .025 "
+        "inch move to an El Flake Slinger dry-flake gun. Tip size alone isn't a guarantee: flake "
+        "shape, how heavy you load the mix and the gun's internal passages all matter, so test on "
+        "a sample panel first.",
+    ),
+    (
+        "Metal flakes in airbrush?",
+        "It depends on the flake size — this isn't a flat yes or no. Larger flakes generally won't "
+        "pass through a standard airbrush and will clog the nozzle, so the needle/nozzle has to be "
+        "big enough for the particle size you're spraying. Even then, nozzle size alone doesn't "
+        "guarantee it: flake shape, the mixture and the airbrush's internal passages all affect "
+        "flow. Tell us your flake size and airbrush model and we'll tell you whether it will work. "
+        "If the flake is too big, use a properly sized spray gun, or an El Flake Slinger dry-flake "
+        "gun for dry application. Either way, test it on a sample panel before the real project.",
+    ),
 ]
 
 
