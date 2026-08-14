@@ -57,8 +57,10 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "Do I need to reduce or thin the paint before spraying?",
         "It depends on the form. Concentrates and many basecoats need to be reduced before "
         "spraying, while ready-to-spray products and spray cans are already set to go. Follow "
-        "the reduction ratio for that product and adjust for temperature — reduce a bit more "
-        "in hot weather so it lays down smooth.",
+        "the reduction ratio printed for that product — don't change the ratio to compensate for "
+        "the weather. Temperature is handled by picking the right REDUCER SPEED instead: fast for "
+        "60-70F, medium for 65-80F, slow for 75-90F and very slow at 95F and above, going by the "
+        "temperature in the spray area rather than outside.",
     ),
     (
         "Can I paint over powder coat or existing paint?",
@@ -99,9 +101,14 @@ KNOWLEDGE: list[tuple[str, str]] = [
     ),
     (
         "Can I airbrush your paint?",
-        "Yes. Reduce it thinner than you would for a spray gun and drop your air pressure; "
-        "candies and flakes airbrush really well for fades, tribal and fine graphics. Test your "
-        "reduction on scrap first to dial it in.",
+        "Yes — many of our products spray through an airbrush, but the needle size, the reduction "
+        "and the pressure all depend on which product you're spraying. Follow that product's own "
+        "mixing ratio; don't over-reduce it just to squeeze it through a smaller nozzle. Anything "
+        "with particles in it — pearls, metallics, flake — needs a larger needle/nozzle than a plain "
+        "basecoat, and larger metal flakes may not pass through an airbrush at all. Tell us the "
+        "product, whether it's ready to spray, your airbrush model and needle size (and the flake "
+        "size if there's flake) and we'll dial it in with you. Always test on a sample panel first, "
+        "and wear proper respiratory protection.",
     ),
     (
         "What is the difference between basecoat, candy and pearl?",
@@ -112,9 +119,13 @@ KNOWLEDGE: list[tuple[str, str]] = [
     ),
     (
         "How do I get a flake finish in the clear coat?",
-        "A common method is to suspend flake in intercoat clear and spray it in light coats over "
-        "your base, then bury it with several clear coats and wet-sand/buff flat. The amount of "
-        "flake you load controls how heavy the sparkle looks.",
+        "Suspend the flake in intercoat clear and spray it in light, even coats over your base, then "
+        "bury it with clear and level it out. Mix the carrier first — Tropical Glitz Intercoat Clear "
+        "and Reducer 1:1 — then add the flake gradually; that 1:1 stays the same no matter how much "
+        "flake goes in. The amount of flake controls how heavy the sparkle looks, so start light, "
+        "shoot a sample panel and build up. Overloading the mix clogs the gun, lands unevenly and "
+        "leaves a rough surface that's hard to bury. Keep it agitated while you spray — flake "
+        "settles fast.",
     ),
     (
         "How long should I wait between coats and before buffing?",
@@ -326,6 +337,124 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "Bare steel and aluminum need to be cleaned, etched/primed and sealed before color so it "
         "adheres and won't flash rust. Chrome is very slick — scuff it well and use an adhesion "
         "promoter or the color can lift. Proper prep is everything on metal.",
+    ),
+    (
+        "Can I spray Tropical Glitz products through an airbrush?",
+        "Yes, many of them airbrush well — but there's no single needle size, reduction or pressure "
+        "that works for everything. It depends on the product. Follow that product's listed mixing "
+        "ratio and don't over-reduce it just to get it through a smaller nozzle. Products with "
+        "pearl, metallic or any other particle need a larger needle/nozzle than a plain basecoat, "
+        "and metal flake needs special thought — bigger flakes may not pass through an airbrush at "
+        "all, and nozzle size alone doesn't guarantee they will, because flake shape, the mix and "
+        "the airbrush's internal passages all play a part. If the particles are too big, a properly "
+        "sized spray gun or an El Flake Slinger dry-flake gun is the way to go. Test your mix and "
+        "pattern on a sample panel before the real project, and always use a respirator and good "
+        "ventilation. Tell us the product, whether it's ready to spray, your airbrush model and "
+        "needle size, and the flake size if there's flake, and we'll help you set it up.",
+    ),
+    (
+        "When do I need to use a dry flake gun?",
+        "Not for every flake. A dry flake gun earns its keep with larger flakes — .025 inch and up — "
+        "or when you want a heavy flake load. Fine and many medium flakes mix into intercoat clear "
+        "just fine and spray through a conventional gun with the right tip size. With the big ones a "
+        "dry gun makes application easier and cuts down on clogging. It lays the flake down on its "
+        "own instead of carrying it in intercoat, and either way the flake still has to be buried "
+        "under clear to end up smooth and protected. Tell us your flake size and whether you're "
+        "after a light even sparkle or heavy coverage and we'll point you to the right setup — and "
+        "test it on a sample panel before the project.",
+    ),
+    (
+        "Which flake gun do you recommend?",
+        "It depends on whether you're spraying the flake wet or dry. WET, mixed into intercoat "
+        "clear: the Tropical Glitz HVLP Flake Gun, which comes with a 2.0mm or a 2.5mm tip. Go 2.0mm "
+        "for smaller flake and lighter work, 2.5mm for larger flake or heavy coverage — the bigger "
+        "opening lets the flake through with less chance of clogging. DRY: the Tropical Glitz El "
+        "Flake Slinger Dry Flake Gun, built specifically to spray flake dry and give you control "
+        "over coverage and distribution. As a guide for flake mixed into intercoat clear: .004 inch "
+        "flake 1.4-1.6mm, .008 inch 1.7-2.0mm, .015 inch 2.0-2.5mm, .025 inch 2.5mm, and anything "
+        "larger than .025 inch should go through the El Flake Slinger. Don't use the El Flake "
+        "Slinger for flake mixed into intercoat, and don't use the HVLP Flake Gun for loose dry "
+        "flake. Tip size alone doesn't guarantee a given flake will pass — flake shape, the mix, the "
+        "reduction and the gun's internal passages matter too, so test on a sample panel first.",
+    ),
+    (
+        "How much flake should I add into the intercoat clear?",
+        "There's no single amount that works for every project — it depends on the flake size and "
+        "whether you want a light, medium or heavy finish. Start with the carrier: mix Tropical "
+        "Glitz Intercoat Clear and Tropical Glitz Reducer 1:1. Once that's mixed, add the flake "
+        "gradually and stir it in thoroughly. Begin with a small amount, spray a sample panel, and "
+        "add more if you want more coverage. Don't overload it: too much flake makes it hard to "
+        "spray, causes clogging and uneven distribution, and leaves a rough finish that takes far "
+        "more clear to bury. For heavy coverage you're better off with several controlled coats, or "
+        "with an El Flake Slinger dry-flake gun, than with an overloaded mix. Keep the mixture "
+        "agitated while you spray because flake settles quickly, and write down how much you used so "
+        "your next batch matches. Note that 1:1 is the Intercoat-to-Reducer ratio, not a flake "
+        "ratio — it stays 1:1 no matter how much flake you add.",
+    ),
+    (
+        "How do I mix Tropical Glitz candy concentrates?",
+        "It's a two-stage mix. First combine 8 parts Tropical Glitz Intercoat Clear with 1 part "
+        "Candy Concentrate and mix thoroughly. Then reduce that whole mixture 1:1 with Tropical "
+        "Glitz Reducer — an amount of reducer equal to the intercoat and concentrate combined. The "
+        "order matters: Intercoat Clear, then Candy Concentrate, mix, then Reducer, mix again. "
+        "Example for 18 oz of sprayable candy: 8 oz Intercoat Clear + 1 oz Candy Concentrate = 9 oz "
+        "of candy mixture, then add 9 oz of Reducer for roughly 18 oz sprayable. Scaling up: 36 oz "
+        "final = 16 + 2 + 18; 72 oz = 32 + 4 + 36; 144 oz = 64 + 8 + 72. An easy way to think about "
+        "it is that the final sprayable amount splits into 18 parts — 8 intercoat, 1 concentrate, 9 "
+        "reducer. The 8:1 applies only before reduction; don't treat the concentrate as one part of "
+        "the finished mix, and keep every measurement in the same unit. Candy Concentrate is very "
+        "transparent, so the ground coat underneath drives the final color — a compatible metallic "
+        "or pearl ground coat is usually the right call, and the color builds through multiple even "
+        "coats rather than by adding extra concentrate. Always shoot a sample panel first.",
+    ),
+    (
+        "How do I choose a reducer?",
+        "Pick the reducer by the temperature of your spray area and the surface you're painting, not "
+        "the temperature outside. Fast Reducer 60-70F, Medium Reducer 65-80F, Slow Reducer 75-90F, "
+        "Very Slow Reducer 95F and above. Faster reducers evaporate quicker for cooler conditions; "
+        "slower ones stay wet longer so the paint has time to flow and level when it's hot. Project "
+        "size, airflow and conditions matter too — if you're right on the line between two ranges, a "
+        "big job that takes longer to spray often does better on the slower one. Use the reducer and "
+        "the mixing ratio specified for your product, and don't change the ratio to compensate for "
+        "temperature. Products labeled Ready to Spray don't take reducer at all. Reducer speed is a "
+        "different thing from activator speed — don't swap one for the other. If you're spraying "
+        "below 65F, or you're not sure which one you need, check the product's technical data sheet "
+        "or reach out to us before you spray.",
+    ),
+    (
+        "How do I achieve a bass boat-like finish?",
+        "That look comes from dense metal-flake coverage over a compatible ground coat, buried under "
+        "enough clear to end up smooth and glossy. Prep and prime with products compatible with your "
+        "substrate, then lay an even ground coat in a color that complements the flake — a similar "
+        "tone helps coverage and keeps thin spots from showing. Apply the flake until you've got the "
+        "coverage you want: for wet application mix Intercoat Clear and Reducer 1:1, add the flake "
+        "gradually, and spray several controlled coats while keeping the mix agitated. For heavier "
+        "coverage or flakes .025 inch and up, an El Flake Slinger dry-flake gun makes it much "
+        "easier. Let the flake layer flash properly, and if the products allow it, a flake-free coat "
+        "of intercoat helps lock everything down. Then clear per that clear coat's technical data "
+        "sheet — heavy flake often needs more than one clear session. Once it's cured, level-sand "
+        "the clear carefully without cutting into the flakes, add more clear if the surface is still "
+        "textured, and let the final clear cure before the last sanding and polish. Shoot a sample "
+        "panel first to confirm the ground color, flake coverage and overall look. If this is going "
+        "on an actual boat rather than a vehicle, make sure every primer, carrier and clear is "
+        "approved for fiberglass or gelcoat and for that kind of marine exposure — an automotive "
+        "clear shouldn't be assumed safe for continuous water immersion.",
+    ),
+    (
+        "How do I bury heavy flakes?",
+        "Heavy flake normally takes several layers of clear to come out level. After the flake goes "
+        "on, let the carrier or intercoat flash properly; if the products allow it, a flake-free coat "
+        "of intercoat clear helps lock the flakes in place before you clear. Start the clear per its "
+        "technical data sheet — a light first coat helps keep the flakes from moving, followed by the "
+        "recommended wet coats and flash times. Don't try to bury it all at once with excessively "
+        "thick coats or too many coats in one session; that traps solvent and causes problems. Once "
+        "the first clear session has cured for the required time, sand the clear until it's level, "
+        "being careful not to cut through into the flakes — sanding into them dulls their color and "
+        "reflection. If the surface is still textured, prep it per the clear's instructions and "
+        "apply another round, repeating until the flakes are fully covered and the surface is "
+        "smooth. Let the final clear cure before the last sanding and polishing. If you see lifting, "
+        "wrinkling, solvent pop, peeling or delamination, stop and contact us. And if you're using an "
+        "SPI clear, follow that clear's SPI technical data sheet for its coats, flash and cure times.",
     ),
 ]
 
