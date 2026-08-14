@@ -148,12 +148,18 @@ def context_block(promos: list[dict[str, str]]) -> str:
     que NO hay promoción, o lista la(s) vigente(s). Así el AI nunca tiene que
     adivinar."""
     if not promos:
+        # OJO: "no hay promo" se refiere a las CAMPAÑAS temporales del panel. El
+        # código WELCOME (10% de bienvenida, un uso por cliente) es permanente y
+        # vive en el system prompt, no aquí — por eso se nombra explícitamente:
+        # sin esta aclaración el modelo leía "no hay ningún código" y lo negaba.
         return (
             '{"type":"promotions","active":false,'
-            '"instruction":"There is NO promo code, discount, coupon or sale running right now. '
-            'If the customer asks about a promo/discount/coupon code, tell them there isn\'t one '
-            'available at the moment, politely and briefly, and offer to help them find the right '
-            'product. NEVER invent, guess or imply a code, percentage or sale."}'
+            '"instruction":"There is NO limited-time sale or campaign code running right now. '
+            'This does NOT include the standing WELCOME code (10% off, one use per customer, '
+            'first order) described in your instructions, which is always available and which you '
+            'SHOULD give when the customer asks about a discount or says they subscribed and '
+            'never got their code. Beyond WELCOME, NEVER invent, guess or imply a code, '
+            'percentage or sale."}'
         )
     items = "; ".join(
         f"{p['code']}" + (f" ({p['description']})" if p.get("description") else "")
@@ -164,5 +170,7 @@ def context_block(promos: list[dict[str, str]]) -> str:
         + items.replace('"', "'")
         + '","instruction":"This promo code IS currently active. Give the customer the exact code '
         'as written when they ask about discounts, and also mention it briefly when you recommend '
-        'a product. Do not invent any other code, percentage or condition beyond what is written here."}'
+        'a product. Do not invent any other code, percentage or condition beyond what is written here. '
+        'The standing WELCOME code (10% off, first order only) still exists as well; codes '
+        'generally cannot be stacked with each other."}'
     )

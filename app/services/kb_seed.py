@@ -282,7 +282,7 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "and Mexico we can only send dry goods (metal flakes, pearls and leaf), because flammable "
         "liquid paint can't go overseas. International rates run about $30-$100 depending on the "
         "country, with 10-16 business days to Canada, Australia and the UK and 15-25 business "
-        "days elsewhere. US orders over $499 ship free (can't be combined with a discount code).",
+        "days elsewhere. US orders over $499 ship free, and that stacks with our WELCOME code.",
     ),
     (
         "Can you make paint by OEM or factory paint code?",
@@ -503,6 +503,37 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "color to see which sizes it comes in. Size also changes how you spray it: the smaller "
         "sizes mix into intercoat clear and go through a conventional gun with the right tip, while "
         "anything larger than .025 should go through an El Flake Slinger dry-flake gun.",
+    ),
+    (
+        "I subscribed to your email but never got my 10% off code",
+        "Sorry about that — no need to wait on it. The welcome code is WELCOME and it takes 10% "
+        "off your order. Just enter it at checkout. There's no minimum purchase, and it stacks "
+        "with our free shipping on US orders over $499. One thing to know: it's one use per "
+        "customer, so it's meant for your first order with us. If it doesn't apply to something "
+        "in your cart, that item is outside the offer — the cart total will show you exactly what "
+        "it took off.",
+    ),
+    (
+        "Do you have a discount code or coupon?",
+        "If this is your first order with us, yes — use WELCOME at checkout for 10% off. No "
+        "minimum purchase, and it stacks with free shipping on US orders over $499. It's one use "
+        "per customer, so it's for first-time buyers. Beyond that we don't have other codes "
+        "running unless you see one advertised on the site.",
+    ),
+    (
+        "I signed up for SMS but didn't receive the welcome discount",
+        "No problem — the code is WELCOME, for 10% off your order, entered at checkout. No "
+        "minimum purchase and it works alongside free shipping on US orders over $499. It's one "
+        "use per customer so it's intended for a first order. If it doesn't come off in the cart, "
+        "let us know at support@tropicalglitz.net and we'll sort it out.",
+    ),
+    (
+        "Is the WELCOME code for everyone or only new customers?",
+        "WELCOME is one use per customer, so in practice it's the first-time buyer offer — 10% "
+        "off, no minimum, and it stacks with free shipping on US orders over $499. If you've "
+        "already used it on a previous order it won't go through a second time. If you're a "
+        "returning customer looking for a deal, email support@tropicalglitz.net and the team can "
+        "let you know what's currently running.",
     ),
 ]
 
