@@ -915,7 +915,7 @@ def _render_dashboard(
         f"<div class='kpis'>{kpi_html}</div>"
         f"{charts_html}"
         f"<div class='sec'><h2>Embudo de conversión</h2><div class='funnel'>{funnel_html}</div></div>"
-        f"<div class='sec'><h2>Ventas generadas por el AI</h2>{sales_html}</div>"
+        f"<div class='sec'><h2>Ventas generadas por el AI</h2>{sales_html}"        f"{_backfill_box(kf)}</div>"
         f"<div class='sec'><h2>🎬 Videos más vistos desde el chat</h2>{videos_html}</div>"
         "<h2 style='font-size:16px;margin:0 0 10px'>Conversaciones</h2>"
         f"<div class='filters'>{filters}</div>"
@@ -1006,6 +1006,31 @@ async def _form_data(request: Request) -> dict[str, str]:
 
     raw = (await request.body()).decode("utf-8", "replace")
     return {k: (v[0] if v else "") for k, v in parse_qs(raw, keep_blank_values=True).items()}
+
+
+def _backfill_box(kf: str) -> str:
+    """Botón para recuperar del historial de Shopify las ventas del chat.
+
+    El token va en un campo oculto del POST y no en la URL. Antes había que
+    armar a mano una dirección con el token pegado, que además quedaba
+    registrada en los logs del servidor."""
+    return (
+        "<form method='post' action='/admin/backfill-run' class='bfform' "
+        "style='margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap'>"
+        f"<input type='hidden' name='key' value='{kf}'>"
+        "<label style='font-size:12px;color:#6b6b74'>Recuperar los últimos"
+        " <select name='days' style='padding:6px 8px;border:1px solid #e2e2e8;border-radius:8px'>"
+        "<option value='30'>30 días</option>"
+        "<option value='90'>90 días</option>"
+        "<option value='120' selected>120 días</option>"
+        "</select></label>"
+        "<button type='submit' style='border:0;border-radius:999px;background:#ef2c8f;color:#fff;"
+        "padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer'>"
+        "Recuperar ventas del historial</button>"
+        "<span class='note' style='margin:0'>Busca compras anteriores que vinieron del chat y las "
+        "guarda. Se puede repetir sin duplicar nada.</span>"
+        "</form>"
+    )
 
 
 def _promos_page(key: str, rows: list, msg: str = "") -> str:
@@ -1115,6 +1140,62 @@ async def admin_promos(
 
     rows = await promos.list_promos(session)
     return HTMLResponse(_promos_page(key, rows, msg))
+
+
+@router.post("/admin/backfill-run")
+async def backfill_run(request: Request, session: AsyncSession = Depends(get_session)):
+    """Corre el backfill desde el botón del panel y muestra el resultado en
+    lenguaje llano. El token llega en el cuerpo del formulario, no en la URL."""
+    form = await _form_data(request)
+    key = str(form.get("key") or "")
+    if not _settings.admin_token or key != _settings.admin_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
+    try:
+        days = max(1, min(365, int(str(form.get("days") or "120"))))
+    except ValueError:
+        days = 120
+
+    kf = html.escape(key)
+    try:
+        r = await ai_orders.backfill(session, days=days)
+    except Exception as e:  # noqa: BLE001
+        cuerpo = (
+            "<div class='sec'><h2>No se pudo completar</h2>"
+            f"<div class='note'>{html.escape(str(e)[:300])}</div>"
+            f"<p><a class='link' href='/admin/conversations?key={kf}'>Volver al panel</a></p></div>"
+        )
+        return HTMLResponse(_admin_page("Recuperar ventas", cuerpo), status_code=200)
+
+    d = r.get("diagnostico") or {}
+    guardadas = int(r.get("stored") or 0)
+    total = int(r.get("total_en_tabla") or 0)
+    titular = (
+        f"Se recuperaron {guardadas} ventas del chat."
+        if guardadas
+        else "No se encontraron ventas nuevas del chat en ese período."
+    )
+    aviso = ""
+    if r.get("truncated"):
+        aviso = (
+            "<div class='note'>Nota: se alcanzó el tope de órdenes por corrida, así que este "
+            "rango puede haber quedado incompleto. Prueba con un período más corto.</div>"
+        )
+    cuerpo = (
+        "<div class='sec'><h2>Recuperar ventas del historial</h2>"
+        f"<p style='font-size:15px;font-weight:700;margin:0 0 10px'>{titular}</p>"
+        "<table><tbody>"
+        f"<tr><td>Órdenes revisadas</td><td class='n'>{int(r.get('scanned') or 0):,}</td></tr>"
+        f"<tr><td>Ventas del chat guardadas ahora</td><td class='n'>{guardadas:,}</td></tr>"
+        f"<tr><td>Total acumulado en el panel</td><td class='n'>{total:,}</td></tr>"
+        f"<tr><td>Período revisado</td><td class='n'>"
+        f"{html.escape(str(d.get('desde') or '?'))} a {html.escape(str(d.get('hasta') or '?'))}"
+        "</td></tr>"
+        "</tbody></table>"
+        f"{aviso}"
+        f"<p style='margin-top:14px'><a class='link' href='/admin/conversations?key={kf}'>"
+        "← Volver al panel</a></p></div>"
+    )
+    return HTMLResponse(_admin_page("Recuperar ventas", cuerpo), status_code=200)
 
 
 @router.post("/admin/promos/add")
