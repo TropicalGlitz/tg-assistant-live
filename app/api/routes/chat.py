@@ -341,9 +341,13 @@ async def upload_videos(payload: VideoUpload, key: str = ""):
 
 
 @router.get("/admin/transcript-status")
-async def transcript_status():
-    """Estado de la ingesta de transcripciones (solo lectura, datos públicos del
-    canal): cuántos videos hay, cuántos ya tienen transcripción y cuáles faltan."""
+async def transcript_status(key: str = ""):
+    """Estado de la ingesta de transcripciones: cuántos videos hay, cuántos ya
+    tienen transcripción y cuáles faltan. Pide clave como el resto del panel:
+    aunque los datos sean públicos, un endpoint /admin abierto invita a probar
+    los demás."""
+    if not _settings.admin_token or key != _settings.admin_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
     from app.services import video_ingest
 
     videos = await video_ingest.catalog_videos()
@@ -373,11 +377,19 @@ class TranscriptUpload(BaseModel):
 
 
 @router.post("/admin/upload-transcripts")
-async def upload_transcripts(payload: TranscriptUpload):
-    """Recibe [(id, título, URL firmada de subtítulos)] y arranca la ingesta en
-    segundo plano. Seguridad sin token: solo se aceptan URLs https de
-    youtube.com/api/timedtext firmadas para ESE video, y solo videos que ya están
-    en el catálogo del canal — el texto siempre viene de YouTube, nunca del caller."""
+async def upload_transcripts(payload: TranscriptUpload, key: str = ""):
+    """Recibe [(id, título, URL de subtítulos, texto de respaldo)] y arranca la
+    ingesta en segundo plano.
+
+    EXIGE LA CLAVE DE ADMIN. Antes no la pedía, con el argumento de que el texto
+    siempre venía de YouTube. No es cierto: la validación de la URL solo mira
+    esquema/host/ruta/parámetro v — no puede verificar la firma de YouTube — y
+    cuando la descarga vuelve vacía (lo habitual desde la IP del datacenter, que
+    es justo por lo que existe el respaldo) se ingiere el `text` que mandó quien
+    llama. Eso permitía inyectar texto arbitrario en la base de conocimiento, que
+    el asistente trata como material propio de Tropical Glitz."""
+    if not _settings.admin_token or key != _settings.admin_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
     from app.services import video_ingest
 
     if len(payload.items) > 300:
