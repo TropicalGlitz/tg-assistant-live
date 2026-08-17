@@ -222,6 +222,16 @@ async def backfill(
     stored = 0
     pages = 0
     truncated = False
+    # Diagnóstico: si `stored` sale 0 hay que poder distinguir "nadie compró
+    # todavía desde el chat" de "la etiqueta se pierde antes de llegar a la
+    # orden". Para eso contamos cuántas órdenes traen CUALQUIER note_attribute,
+    # cuántas traen las del sistema REP anterior y cuántas las nuestras, además
+    # del rango de fechas que realmente alcanzamos a mirar.
+    con_atributos = 0
+    con_rep = 0
+    con_tg = 0
+    primera = ""
+    ultima = ""
     url: str | None = f"{api}/orders.json"
     async with httpx.AsyncClient(headers=headers, timeout=60) as client:
         while url and pages < max_pages:
@@ -230,6 +240,19 @@ async def backfill(
             batch = r.json().get("orders", [])
             scanned += len(batch)
             for o in batch:
+                creado = str(o.get("created_at") or "")[:10]
+                if creado:
+                    if not ultima or creado > ultima:
+                        ultima = creado
+                    if not primera or creado < primera:
+                        primera = creado
+                na = _note_attrs(o)
+                if na:
+                    con_atributos += 1
+                    if any(k.startswith("rep_") for k in na):
+                        con_rep += 1
+                    if any(k.startswith("_tg_ai") for k in na):
+                        con_tg += 1
                 row = parse_order(o)
                 if not row:
                     continue
@@ -251,4 +274,11 @@ async def backfill(
         "truncated": truncated,
         "total_en_tabla": total,
         "dias": days,
+        "diagnostico": {
+            "ordenes_con_algun_atributo": con_atributos,
+            "con_etiqueta_rep_vieja": con_rep,
+            "con_etiqueta_tg_ai": con_tg,
+            "desde": primera,
+            "hasta": ultima,
+        },
     }
