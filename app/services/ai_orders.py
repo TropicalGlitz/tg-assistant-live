@@ -13,6 +13,7 @@ escaneo por API se conserva solo como respaldo para el historial anterior.
 """
 from __future__ import annotations
 
+import datetime as _dt
 import json
 import logging
 from typing import Any
@@ -56,6 +57,28 @@ async def ensure_table(session: AsyncSession) -> None:
         _log.exception("No se pudo asegurar la tabla ai_orders")
 
 
+def _as_datetime(value: Any) -> _dt.datetime:
+    """Shopify manda `created_at` como texto ISO ("2026-08-12T08:48:52-04:00").
+
+    asyncpg NO acepta texto para una columna TIMESTAMPTZ: exige un datetime. Sin
+    esta conversión el INSERT reventaba con DataError y la orden se perdía — que
+    es exactamente lo que estaba pasando (el webhook se tragaba el error y el
+    backfill lo contaba como "no guardada").
+    """
+    if isinstance(value, _dt.datetime):
+        return value if value.tzinfo else value.replace(tzinfo=_dt.timezone.utc)
+    txt = str(value or "").strip()
+    if txt:
+        if txt.endswith("Z"):
+            txt = txt[:-1] + "+00:00"
+        try:
+            parsed = _dt.datetime.fromisoformat(txt)
+            return parsed if parsed.tzinfo else parsed.replace(tzinfo=_dt.timezone.utc)
+        except ValueError:
+            _log.warning("Fecha de orden ilegible (%r); se usa la hora actual", value)
+    return _dt.datetime.now(_dt.timezone.utc)
+
+
 def _note_attrs(order: dict[str, Any]) -> dict[str, str]:
     out: dict[str, str] = {}
     for na in order.get("note_attributes") or []:
@@ -95,7 +118,7 @@ def parse_order(order: dict[str, Any]) -> dict[str, Any] | None:
         "order_id": str(order.get("id")),
         "order_name": order.get("name"),
         "session_id": sid or None,
-        "created_at": order.get("created_at"),
+        "created_at": _as_datetime(order.get("created_at")),
         "total": round(total, 2),
         "ai_revenue": round(direct, 2),
         "currency": order.get("currency") or "USD",
@@ -114,8 +137,9 @@ async def upsert(session: AsyncSession, row: dict[str, Any]) -> None:
             """
             INSERT INTO ai_orders (order_id, order_name, session_id, created_at, total,
                                    ai_revenue, currency, financial_status, cancelled, items, updated_at)
-            VALUES (:order_id, :order_name, :session_id, :created_at, :total,
-                    :ai_revenue, :currency, :financial_status, :cancelled, CAST(:items AS jsonb), now())
+            VALUES (:order_id, :order_name, :session_id, :created_at, CAST(:total AS NUMERIC),
+                    CAST(:ai_revenue AS NUMERIC), :currency, :financial_status, :cancelled,
+                    CAST(:items AS jsonb), now())
             ON CONFLICT (order_id) DO UPDATE SET
                 order_name = EXCLUDED.order_name,
                 session_id = COALESCE(EXCLUDED.session_id, ai_orders.session_id),
@@ -127,7 +151,12 @@ async def upsert(session: AsyncSession, row: dict[str, Any]) -> None:
                 updated_at = now();
             """
         ),
-        {**row, "items": json.dumps(row.get("items") or [], ensure_ascii=False)},
+        {
+            **row,
+            "total": str(row.get("total") or 0),
+            "ai_revenue": str(row.get("ai_revenue") or 0),
+            "items": json.dumps(row.get("items") or [], ensure_ascii=False),
+        },
     )
     await session.commit()
 
