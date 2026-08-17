@@ -30,7 +30,11 @@
       if (t) ctx.page_type = t;
       if (meta.product && meta.product.variants) {
         ctx.page_type = "product";
-        ctx.title = meta.product.type || "";
+        // OJO: meta.product.type es el TIPO de producto de Shopify ("Candy
+        // Paint"), no el nombre. Si se usa como título, el saludo dice la
+        // categoría en vez del producto que el cliente está viendo. Se guarda
+        // aparte y solo se usa si abajo no encontramos el nombre real.
+        ctx.type = meta.product.type || "";
       }
     } catch (e) {}
     try {
@@ -46,7 +50,13 @@
       if (ctx.page_type === "product" && !ctx.title) {
         var og = document.querySelector('meta[property="og:title"]');
         var h1 = document.querySelector("h1");
-        ctx.title = (og && og.content) || (h1 && h1.textContent) || document.title || "";
+        // El nombre real primero; el tipo de producto solo como último recurso.
+        ctx.title =
+          (og && og.content) ||
+          (h1 && h1.textContent) ||
+          ctx.type ||
+          document.title ||
+          "";
       }
       if (ctx.page_type === "collection") {
         var ogc = document.querySelector('meta[property="og:title"]');
