@@ -64,9 +64,17 @@ KNOWLEDGE: list[tuple[str, str]] = [
     ),
     (
         "Can I paint over powder coat or existing paint?",
-        "Yes, as long as the surface is sound. Scuff it to a uniform dull finish, clean and "
-        "degrease thoroughly, and on very slick surfaces use an adhesion promoter. Then seal/"
-        "base and clear as normal. Skipping the scuff and degrease is the #1 cause of peeling.",
+        "Yes, as long as the existing finish is fully cured, firmly attached and compatible. "
+        "Scuff it to a uniform dull finish, clean and degrease thoroughly, and on very slick "
+        "surfaces use an adhesion promoter, then seal/base and clear as normal. Skipping the "
+        "scuff and degrease is the #1 cause of peeling. What you should NOT do is paint over a "
+        "finish that's peeling, cracking, lifting, bubbling, rusting or delaminating — that has "
+        "to be removed or repaired first, because whatever you spray on top fails with it. If "
+        "bare metal, plastic or fiberglass ends up exposed, it needs the right primer, sealer or "
+        "adhesion promoter. If you don't know what the existing paint is, do a test area first: "
+        "a compatible sealer may be needed to isolate it and avoid lifting, wrinkling or "
+        "bleeding. And remember candy, pearl and chameleon colors are semi-transparent, so the "
+        "old color and how uniform it is will change the final look.",
     ),
     (
         "Do I need a clear coat over candy or flake?",
@@ -534,6 +542,139 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "already used it on a previous order it won't go through a second time. If you're a "
         "returning customer looking for a deal, email support@tropicalglitz.net and the team can "
         "let you know what's currently running.",
+    ),
+    (
+        "Can I apply Tropical Glitz paint over existing paint?",
+        "Generally yes, if the existing finish is fully cured, firmly attached, compatible and "
+        "properly prepped: clean, dry, free of wax, grease, silicone and dirt, and sanded or "
+        "scuffed to kill the gloss so the new paint can grab. Never spray over a finish that's "
+        "peeling, cracking, lifting, bubbling, rusting or delaminating — remove or repair those "
+        "areas first. If any metal, plastic or fiberglass is exposed, it needs the right primer, "
+        "sealer or adhesion promoter. If the existing paint is fresh, check its recoat window "
+        "before adding anything. If you don't know what it is, prepare a test area first; a "
+        "compatible sealer may be needed to isolate an unknown or sensitive finish and reduce the "
+        "risk of lifting, wrinkling or bleeding. Keep in mind candy, pearl, chameleon and other "
+        "semi-transparent colors are affected by what's underneath, so the color and uniformity of "
+        "the old finish will change the final appearance. Follow the tech sheets for every product "
+        "in the system, and do a test panel before the whole project.",
+    ),
+    (
+        "Can I activate your basecoat?",
+        "Yes — pourable Tropical Glitz basecoats can be activated with Tropical Glitz Basecoat "
+        "Activator, which helps adhesion and durability. Two things people get wrong: Basecoat "
+        "Activator and Intercoat Activator are different products with different mixing ratios, so "
+        "don't substitute one for the other, and the activator does NOT replace reducer — the "
+        "basecoat still gets reduced as directed for that product. Use the amount and procedure on "
+        "the current product label. Don't add activator to an aerosol can, and don't use a "
+        "clear-coat or another brand's activator unless we've confirmed it's compatible. Activated "
+        "material has a limited usable time, so mix only what you need. If you don't have the "
+        "instructions in front of you, call our technical team at 786-383-3013 or email "
+        "support@tropicalglitz.net before you mix — we'd rather give you the exact ratio than have "
+        "you guess at it.",
+    ),
+    (
+        "Can I mix Tropical Glitz pearls and flakes into another paint system?",
+        "Often yes, but compatibility has to be confirmed first — we can't guarantee how another "
+        "manufacturer's product will behave with ours. Pearls and flakes need a compatible carrier, "
+        "like an intercoat clear or another binder the paint-system manufacturer approves. For the "
+        "most predictable results we'd use Tropical Glitz Intercoat Clear. If you're using another "
+        "brand's carrier, check its technical data sheet or ask that manufacturer whether it "
+        "accepts dry pearls or metal flakes. Never mix pearls or flakes directly into reducer, "
+        "activator or hardener. Mixing brands can affect performance and warranties, so a test "
+        "panel is strongly recommended. Tell us which pearl or flake you have (and the flake size), "
+        "plus the brand and type of the other system and whether it's solvent-based or waterborne, "
+        "and we'll help — or call 786-383-3013 / email support@tropicalglitz.net.",
+    ),
+    (
+        "Why is my paint cloudy or hazy?",
+        "First thing to rule out: basecoat normally dries DULL or matte before clear goes on — dull "
+        "isn't the same as cloudy or milky. If it's truly hazy, common causes are high humidity or "
+        "moisture in the air line, coats applied too heavy, not enough flash time, trapped "
+        "solvents, the wrong reducer or mixing ratio, surface contamination, dry spray, or gun "
+        "settings. On metallic, pearl, candy or flake it can also come from uneven passes, "
+        "inconsistent overlap, gun distance, poor particle orientation, or too much pearl or flake "
+        "in the mix. If the CLEAR looks milky, stop adding coats and let it dry under proper "
+        "temperature, humidity and airflow. Don't clear over a cloudy basecoat and don't add more "
+        "material to hide it — that traps the problem. If it's still there once everything is dry, "
+        "that layer likely has to be corrected and reapplied. Tell us which product it is and when "
+        "the haze appeared, or call 786-383-3013 / email support@tropicalglitz.net.",
+    ),
+    (
+        "Why is my paint peeling or delaminating?",
+        "Peeling means a layer didn't bond — either to the surface or to the layer under it. The "
+        "usual causes are inadequate sanding or prep, contamination (wax, grease, silicone, dust, "
+        "moisture), painting over an unstable existing finish, incompatible products, going outside "
+        "a recoat window, coats too heavy or without enough flash, trapped solvents, a wrong ratio "
+        "or reducer, a missing primer/sealer/adhesion promoter, or excessive film thickness. Where "
+        "it separates is a clue: clear letting go of the basecoat points to a recoat-window, "
+        "contamination or compatibility issue, while the whole system lifting off the substrate "
+        "points to prep or a missing primer. Do NOT paint or clear over material that's already "
+        "peeling. It has to come off back to a firmly attached layer, and the cause has to be found "
+        "before you refinish. Email photos of the affected area and the underside of the peeled "
+        "coating to support@tropicalglitz.net, or call 786-383-3013, and we'll help you work out "
+        "what happened.",
+    ),
+    (
+        "Why isn't my paint covering?",
+        "Start with what the product is. Candies, pearls, chameleons and other effect colors are "
+        "designed to be transparent or semi-transparent — they aren't meant to hide what's "
+        "underneath, and their final look depends heavily on the color and uniformity of the ground "
+        "coat. Pearls and flakes create an effect, not coverage. If it's an opaque basecoat that "
+        "isn't covering, the usual causes are the wrong or uneven ground-coat color, not mixing "
+        "thoroughly, over-reduction, coats applied too light or too dry, gun settings, inconsistent "
+        "overlap, or simply not enough coats. Mix the material well to redistribute settled "
+        "pigment, then apply even coats with consistent distance, speed and overlap and the "
+        "recommended flash between them. Don't lay on heavy coats to cover faster — that brings "
+        "runs, uneven color, trapped solvents and long dry times. With candy, keep the coat count "
+        "the same across every panel, because each coat deepens the color. A test panel is the way "
+        "to confirm the ground coat and coat count before the real job.",
+    ),
+    (
+        "Why is my spray can clogging?",
+        "Usually paint, pearl or flake has settled in the can or dried in the tip. Bring the can to "
+        "normal room temperature first, then shake it thoroughly for the time stated on the label — "
+        "and with pearl or flake keep shaking during application to keep the particles suspended. "
+        "Hold it upright, press the tip all the way down, and use steady passes. If the tip clogs, "
+        "stop; if that plastic tip is the removable type, take it off and clean just the tip with "
+        "the cleaner recommended for that product, then let it dry before putting it back. When "
+        "you're done spraying, clear the tip the way the can instructs — if it says to, turn it "
+        "upside down and spray briefly until only clear propellant comes out. Some hard safety "
+        "rules: never put a pin, wire or drill bit into the can or valve, and never puncture, "
+        "crush, open or heat an aerosol can — no flame, no heat gun, no hot water. If it stays "
+        "clogged, has no pressure, or looks damaged or leaking, stop using it and contact us at "
+        "786-383-3013 or support@tropicalglitz.net.",
+    ),
+    (
+        "Why did my paint wrinkle or crack?",
+        "Wrinkling, lifting or cracking means the layers reacted with each other, dried at "
+        "different rates, or went on too heavy. Wrinkling or lifting during or right after "
+        "application usually comes from recoating before the previous coat flashed, coming back "
+        "after the recoat window closed, heavy wet coats trapping solvent, spraying over paint "
+        "that isn't dry or cured, incompatible primers, bases, reducers, activators or clears, a "
+        "wrong ratio or reducer, or a strong solvent-based product over a sensitive existing "
+        "finish. Cracking or fine crazing that shows up later usually means excessive film "
+        "thickness, trapped solvents, an unstable or cracked finish underneath, incompatible "
+        "layers, wrong ratios, substrate movement or big temperature swings. Stop spraying as soon "
+        "as you see it — don't try to bury it under more base or clear. Let it dry or cure per the "
+        "instructions, then remove the affected material back to a firmly attached layer and fix "
+        "the cause before refinishing. Don't sand it while it's soft, swollen or gummy. Email "
+        "photos to support@tropicalglitz.net or call 786-383-3013 and we'll help you pin down the "
+        "cause.",
+    ),
+    (
+        "Why is my finish rough?",
+        "It depends which kind of rough. Dry spray — a sandy, dull texture — comes from holding the "
+        "gun too far away, moving too fast, too much air pressure, a reducer that flashes too "
+        "quickly for the temperature, or coats that are too light. Orange peel comes from air "
+        "pressure, tip size, reduction, material flow, or inconsistent distance and overlap. Dust, "
+        "dirt, overspray, booth contamination or debris from the air line can also land in the "
+        "finish. And metal flake feels naturally textured until it's fully buried under clear — "
+        "that one isn't a defect. Work out which layer is rough before doing anything. Don't try to "
+        "bury heavy texture or contamination under more heavy coats. If it's flake texture, it "
+        "needs enough properly applied clear over it before any sanding or polishing, and never "
+        "sand into exposed flake, candy, pearl or metallic basecoat. Tell us which layer it is, "
+        "your gun setup and your shop conditions and we'll narrow it down — or call 786-383-3013 / "
+        "email support@tropicalglitz.net.",
     ),
 ]
 
