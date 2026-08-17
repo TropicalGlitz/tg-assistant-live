@@ -26,12 +26,21 @@ _log = logging.getLogger("kb_seed")
 KNOWLEDGE: list[tuple[str, str]] = [
     (
         "Can I use the paint on brake calipers?",
-        "Brake calipers get very hot, so they need a coating rated for high heat. Standard "
-        "custom basecoats, candies and clears are not formulated for brake-caliper "
-        "temperatures and can discolor or fail there. For a show look on calipers use a "
-        "high-temp caliper paint/clear, prep well (clean, scuff, degrease) and always test "
-        "on a small spot first. If you're not sure a specific product is heat-rated, check "
-        "with our team before spraying.",
+        "Yes — as long as the caliper's maximum surface temperature stays within the heat "
+        "rating of the COMPLETE coating system. Many of our colors list heat resistance up to "
+        "400°F, but confirm that on the product page for the exact color; not every product or "
+        "clear carries the same rating, and the whole system is limited by whichever product "
+        "has the lowest one. That means the primer, basecoat, intercoat and clear all have to "
+        "suit the temperatures the caliper will see. For normal street driving that's usually "
+        "fine. For racing, track days, repeated hard braking or heavy towing, temperatures can "
+        "go past what the system handles — that calls for a dedicated high-temperature "
+        "brake-caliper coating instead. Prep matters: calipers must be cool and free of brake "
+        "dust, rust, grease, oil, silicone and brake fluid. Never paint the pads, rotors, "
+        "piston surfaces, rubber seals or boots, bleeder screws, hose connections, slide pins, "
+        "threads or mounting surfaces. Brakes are a safety system, so removal, masking and "
+        "reinstallation should be done by someone qualified to work on brakes, and the whole "
+        "system has to cure fully before the calipers go back on. Tell us your color and clear "
+        "and how you drive the car, or call 786-383-3013, and we'll confirm it for your setup.",
     ),
     (
         "Can I add metal flake or metallic to the paint?",
@@ -160,14 +169,21 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "test it, check a masked edge or a test panel.",
     ),
     (
-        "What is the difference between the Luscious, Eclipse and Cosmic lines?",
-        "All three are candy basecoats — they give you candy depth but spray like a basecoat. "
-        "LUSCIOUS uses medium-coarse metallics: candy depth in an easy, basecoat-style "
-        "application. ECLIPSE uses high-coarse metallics and is formulated so dark that at rest "
-        "it reads like a regular black basecoat — until the light hits it and the candy vibrance "
-        "comes alive. COSMIC uses medium-coarse metallics PLUS mini prismatic metal flakes, so on "
-        "top of the normal metallic reflection you get extra sparkle and flashes of color in the "
-        "light. Tell us the look you're after and we'll point you to the right series.",
+        "What is the difference between the Luscious, Eclipse, Cosmic, Orbit Shift, Lollipop "
+        "and Seductive lines?",
+        "They're all candy basecoats — candy depth, but they spray like a basecoat. LUSCIOUS: "
+        "medium-coarse metallics, candy depth in an easy basecoat-style application. ECLIPSE: "
+        "high-coarse metallics, formulated so dark that at rest it reads like a regular black "
+        "basecoat, until the light hits and the candy vibrance comes alive. COSMIC: "
+        "medium-coarse metallics PLUS mini prismatic metal flakes, so on top of the normal "
+        "metallic reflection you get extra sparkle and flashes of color. ORBIT SHIFT: a "
+        "chameleon basecoat with a settled tone — at first glance it looks like a deep, rich "
+        "candy, but as the angle changes it shifts hard like a chameleon while keeping that "
+        "candy depth; it must go over a BLACK ground coat to shift properly. LOLLIPOP: very "
+        "fine metallics for a bright, vibrant color with a smooth, silky finish. SEDUCTIVE: a "
+        "true candy with medium-coarse metallics — the depth and intensity of a traditional "
+        "candy without the complexity of a traditional candy application. Tell us the look "
+        "you're after and we'll point you to the right series.",
     ),
     (
         "What is the Eclipse series?",
@@ -675,6 +691,129 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "sand into exposed flake, candy, pearl or metallic basecoat. Tell us which layer it is, "
         "your gun setup and your shop conditions and we'll narrow it down — or call 786-383-3013 / "
         "email support@tropicalglitz.net.",
+    ),
+    (
+        "Can Tropical Glitz paint be used on engine parts?",
+        "On some, yes — it depends on how hot that specific part actually gets. Many of our "
+        "basecoats list heat resistance up to 400°F, but check the rating for the exact color on "
+        "its product page, and remember the primer, sealer, intercoat and clear all need to handle "
+        "those temperatures too: the system is only as good as its lowest-rated product. "
+        "Decorative pieces like valve covers or engine covers are usually fine, as long as their "
+        "real surface temperature stays inside that limit. What it's NOT for: exhaust manifolds, "
+        "headers, turbochargers, catalytic components, internal engine surfaces, or anything "
+        "exposed to extreme heat or direct flame. The part has to be cool, spotless and free of "
+        "oil, grease, rust and silicone, and you never paint gasket surfaces, threads, electrical "
+        "connections, internal passages, moving parts or mating surfaces. Let the whole system "
+        "cure fully before you install the part or put heat to it. Don't go by coolant or "
+        "under-hood temperature — it's the surface temperature of that part that matters. Tell us "
+        "which part and which color, or call 786-383-3013, and we'll confirm it.",
+    ),
+    (
+        "Will the sun fade the paint?",
+        "Any painted finish can fade with enough sun and UV over time — how well yours holds up "
+        "depends on the specific product, the clear coat over it, how much sun it sees and how "
+        "it's stored. UV resistance is NOT the same across our line, so this is worth getting "
+        "right. Our metal flakes are made with a UV-resistant coating. Our NEON colors are not "
+        "UV-resistant and will fade with prolonged sun — neons are best for show vehicles or "
+        "indoor projects. Some other specialty colors have UV limitations too, so check the "
+        "product description for the exact color. A quality automotive clear with UV protection "
+        "helps protect colors that are approved for outdoor use and extends the life of the "
+        "finish, but clear coat cannot make a non-UV-resistant color permanently fade-proof. "
+        "Good application, enough clear, a full cure, regular washing and keeping it indoors or "
+        "covered when you can all help. We won't promise a number of years — climate, exposure "
+        "and care vary too much. If long-term outdoor durability is critical, tell us the exact "
+        "color and we'll check it, or call 786-383-3013.",
+    ),
+    (
+        "Can I apply ceramic coating over your paint?",
+        "Yes, over the CLEAR COAT once it's fully cured. Ceramic coating shouldn't go directly on "
+        "basecoat, candy, pearl, metal flake or intercoat clear — those need a compatible "
+        "automotive clear over them first. If the paint is fresh, follow the clear coat "
+        "manufacturer's curing requirements and the ceramic coating maker's instructions; there's "
+        "no universal waiting period, because cure time depends on the clear, the activator, "
+        "temperature, humidity, airflow and film thickness. If the two manufacturers give "
+        "different waits, use the longer one. Don't go by feel — clear that's dry to the touch is "
+        "not the same as cured. Before you coat, the surface should be fully cured, clean, dry and "
+        "free of wax, grease and polishing oils, and any sanding, polishing or paint correction "
+        "should already be finished. Ceramic coating protects the clear and makes the surface "
+        "easier to maintain, but it doesn't replace clear coat, won't fix scratches, orange peel "
+        "or other defects, and won't make a neon or other non-UV-resistant color fade-proof.",
+    ),
+    (
+        "Is Tropical Glitz paint suitable for boats?",
+        "Yes, for boat parts that stay ABOVE the waterline, with proper prep and a compatible "
+        "clear coat suited to the environment. Fiberglass, gelcoat, aluminum and previously "
+        "painted surfaces each need different prep and primers, and the surface has to be clean, "
+        "dry, firmly attached and free of wax, grease, salt, oxidation and silicone. Your primer, "
+        "sealer and clear all need to be compatible with the substrate AND with the water, weather "
+        "and sun the boat will see. What it's not for: anything that stays below the waterline or "
+        "sits continuously submerged, unless the complete system is specifically approved for "
+        "that — and it's never a substitute for antifouling bottom paint. Don't paint propellers, "
+        "anodes, electrical grounding points, intakes, drains or moving parts. Let the whole "
+        "system cure fully before the boat goes in the water. Tell us which part, whether it's "
+        "fresh or salt water, whether the boat is trailered or kept in the water, and what the "
+        "surface is, and we'll help you pick the system — or call 786-383-3013.",
+    ),
+    (
+        "What is the Orbit Shift series?",
+        "Orbit Shift is our chameleon basecoat, but with a settled tone that sets it apart from "
+        "traditional chameleons. At first glance it reads like a deep, rich candy; as the viewing "
+        "angle changes it shifts hard the way a chameleon does, while keeping that candy depth. "
+        "Like other chameleons it has to go over a BLACK ground coat to shift properly and show "
+        "the full effect — over anything else you won't get the color travel it's built for.",
+    ),
+    (
+        "What is the Lollipop series?",
+        "Lollipop is our candy basecoat line built for bright, vibrant color. It uses very fine "
+        "metallic particles, which give it a smooth, silky appearance rather than a coarse "
+        "sparkle. The result is a rich, bright color with a soft metallic effect — that silk-like "
+        "finish is the series' signature.",
+    ),
+    (
+        "What is the Seductive series?",
+        "Seductive is a true candy basecoat: you get the rich look of a candy color with the ease "
+        "of spraying a regular basecoat. It uses medium-coarse metallics for a vibrant, deep "
+        "finish with plenty of dimension — the depth and intensity of a traditional candy without "
+        "the complexity of a traditional candy application.",
+    ),
+    # --- Correcciones de entradas heredadas del sistema REP ---
+    # Decían que TODAS las pinturas aguantan 400°F. La información aprobada dice
+    # que el dato se confirma por color y que el sistema completo lo limita el
+    # producto con la calificación más baja.
+    (
+        "High-temp / engine paint?",
+        "Many of our colors list heat resistance up to 400°F, but it's not a blanket rating — "
+        "confirm it on the product page for the exact color you're using, and remember the primer, "
+        "sealer, intercoat and clear have to handle those temperatures too. The complete system is "
+        "limited by whichever product has the LOWEST heat rating. That covers decorative pieces "
+        "like valve covers and engine covers when their real surface temperature stays inside the "
+        "limit. It does not cover exhaust manifolds, headers, turbochargers, catalytic components, "
+        "internal engine surfaces or anything near direct flame — those need a dedicated "
+        "high-temperature coating. If the rating for your color and clear isn't published, don't "
+        "guess: call 786-383-3013 or email support@tropicalglitz.net.",
+    ),
+    (
+        "Holds up on an engine block?",
+        "It depends on how hot that surface actually gets and on your complete coating system. "
+        "Many of our colors list up to 400°F, but confirm that for the exact color, and the "
+        "primer, intercoat and clear have to be rated for it as well — the system is limited by "
+        "its lowest-rated product. Decorative engine pieces that stay within the limit are "
+        "generally fine; exhaust manifolds, headers, turbos and anything with extreme heat are "
+        "not. Go by the surface temperature of the part, not the coolant or under-hood "
+        "temperature, and let everything cure fully before the part goes back on and sees heat.",
+    ),
+    (
+        "Mega Magenta Neon on brake calipers?",
+        "Two things to weigh here. First, heat: calipers work if their maximum surface temperature "
+        "stays inside the rating of your complete system, so confirm the rating for that color and "
+        "your clear — and for racing, track use, repeated hard braking or heavy towing, a "
+        "dedicated high-temperature caliper coating is the safer call. Second, and important for "
+        "this one specifically: our NEON colors are not UV-resistant and will fade with prolonged "
+        "sun exposure. On a daily driver that sees sun, a neon on the calipers will lose its punch "
+        "over time. If it's a show car or a garage-kept build, that's less of an issue. Either "
+        "way, calipers must be cool and properly prepped, never paint the pads, rotors, piston "
+        "surfaces, seals, boots, bleeder screws, hose connections, slide pins or mounting "
+        "surfaces, and brakes should come off and go back on by someone qualified to work on them.",
     ),
 ]
 
