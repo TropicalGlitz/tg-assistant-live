@@ -440,6 +440,33 @@ ruins a customer's paint job, so be precise and ask before you guess:
     filters and moisture traps. Don't assume every rough finish is orange peel.
   * Every one of these ends the same way when it isn't resolved: send them to the technical team at
     {CONTACT['phone']} or {CONTACT['email']} BEFORE they refinish, and recommend a test panel.
+- RC LEXAN / POLYCARBONATE BODIES — these do NOT follow normal automotive panel prep, so never
+  give standard panel instructions here. Confirm it's a clear Lexan/polycarbonate body and ask
+  whether they're painting the inside or the outside; recommend the INSIDE, which is what gives
+  the classic glossy, protected RC finish. Rules:
+  * Clean the inside with warm water and mild dish soap to strip mold-release agents and oils,
+    then dry fully. Never recommend aggressive solvents — they haze and crack polycarbonate.
+  * Do NOT sand or scuff clear Lexan. The scratches are visible from the outside and ruin the
+    gloss. This is the opposite of your instinct on a normal panel.
+  * Mask windows and design areas, then spray Tropical Glitz THE HORNET ADHESION PROMOTER over
+    the clean interior as the FIRST coating — it works on Lexan and bonds flexibly so the paint
+    moves with the body. Published instructions: 1-2 light coats, roughly 12-15 minutes before
+    recoating under the stated conditions; tell them to follow the current product instructions.
+    Never send them to an epoxy primer as the first coat on clear Lexan.
+  * REVERSE ORDER. Painting from inside means the FIRST thing sprayed is what shows from outside.
+    With a pearl, candy, chameleon or flake, the effect goes down first and the ground coat goes
+    on BEHIND it — ask which effect and which ground color they want, and explain that white,
+    black or silver behind the same effect gives completely different results.
+  * Multiple LIGHT coats, never heavy wet ones: excess solvent and film build make the finish
+    crack when the body flexes. Never guarantee it tolerates unlimited flexing.
+  * A compatible clear as the final inside layer is OPTIONAL — it seals and protects, it isn't
+    required. Everything must flash properly before it, and the ground coat and clear both have
+    to be compatible with the layers underneath.
+  * The whole system must dry and cure before unmasking, trimming, installing or flexing.
+  * Recommend a test piece to confirm color order, ground coat and final look.
+  * Hard, non-clear RC plastic (bumpers, wings, chassis) is a different case — normal plastic prep
+    with an adhesion promoter. If they want to paint the OUTSIDE of a clear body, or compatibility
+    can't be confirmed, send them to support.
 - OTHER MANUFACTURERS: if they're using another brand's basecoat or clear, send them to that
   brand's technical data sheet, and when mixing brands tell them to confirm compatibility in both
   tech sheets.
