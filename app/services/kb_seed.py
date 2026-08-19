@@ -51,10 +51,17 @@ KNOWLEDGE: list[tuple[str, str]] = [
     ),
     (
         "Can I use the paint on RC car bodies?",
-        "Most RC car bodies are clear Lexan/polycarbonate and are painted on the INSIDE with "
-        "polycarbonate-specific paint that stays flexible; regular automotive paint tends to "
-        "crack or peel on Lexan. For hard-plastic RC parts (bumpers, wings, chassis) you can "
-        "use custom paint if you scuff and use a plastic adhesion promoter first.",
+        "Yes. Clear Lexan/polycarbonate bodies get painted from the INSIDE, so the Lexan itself "
+        "stays as the glossy outer surface and protects the paint. The key is Tropical Glitz "
+        "The Hornet Adhesion Promoter — it works on Lexan and goes down first over the clean "
+        "interior, creating a flexible bond so the color moves with the body instead of "
+        "cracking. Wash the inside with warm water and mild dish soap to strip the "
+        "mold-release agents, let it dry, and do NOT sand or scuff clear Lexan — those "
+        "scratches show through from the outside. Then spray in multiple light coats, and "
+        "remember you're painting in reverse: the first color you spray is what shows from "
+        "the outside, with the ground coat going on behind it. For hard-plastic RC parts "
+        "(bumpers, wings, chassis) you scuff and use an adhesion promoter as you would on any "
+        "plastic part. Test piece first — the ground coat changes the look a lot.",
     ),
     (
         "Do candy colors need a base coat?",
@@ -814,6 +821,53 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "way, calipers must be cool and properly prepped, never paint the pads, rotors, piston "
         "surfaces, seals, boots, bleeder screws, hose connections, slide pins or mounting "
         "surfaces, and brakes should come off and go back on by someone qualified to work on them.",
+    ),
+    (
+        "How do I prep and paint an RC Lexan body using Tropical Glitz products?",
+        "Paint it from the INSIDE — that way the Lexan stays glossy on the outside and shields the "
+        "paint. Step by step: 1) Wash the inside with warm water and mild dish soap to remove "
+        "mold-release agents and oils, rinse and let it dry completely. Skip aggressive solvents; "
+        "they can haze or crack polycarbonate. 2) Do NOT sand or scuff the clear Lexan — scratches "
+        "on the inside are visible from the outside and you lose that glossy RC finish. 3) Mask "
+        "your windows and any design areas. 4) Spray Tropical Glitz The Hornet Adhesion Promoter "
+        "over the clean interior — 1 to 2 light coats per the product instructions; the current "
+        "specs list about 12-15 minutes before recoating under the stated conditions. It gives you "
+        "a strong, flexible bond to the Lexan. 5) Apply your color or effect in multiple LIGHT "
+        "coats. Heavy wet coats trap solvent and make the finish more likely to crack when the body "
+        "flexes. 6) Work in reverse: the first thing you spray is what shows from outside, so with "
+        "a pearl, candy, chameleon or flake the effect goes down FIRST and the ground coat goes "
+        "behind it. 7) Then the ground coat — white, black or silver behind the same effect gives "
+        "completely different results, so make sure it's compatible with the layers under it. "
+        "8) A compatible clear as the last inside layer is optional; it seals and protects the "
+        "colors. Let everything flash first and follow that clear's instructions. 9) Let the whole "
+        "system dry and cure before you unmask, trim, install or flex the body. Do a test piece "
+        "first to confirm your color order and ground coat — and no coating tolerates unlimited "
+        "flexing, so treat a hard crash as a hard crash.",
+    ),
+    (
+        "Does The Hornet Adhesion Promoter work on Lexan?",
+        "Yes — The Hornet works on Lexan/polycarbonate RC bodies and is what we'd use as the first "
+        "coating over the clean interior surface before any color. It creates a strong, flexible "
+        "bond between the Lexan and the paint, which is what keeps the finish from cracking when "
+        "the body flexes. Apply 1 to 2 light coats following the product instructions; the current "
+        "specs list roughly 12-15 minutes before recoating under the stated conditions. Make sure "
+        "the surface is clean and completely dry first — warm water and mild dish soap, no "
+        "aggressive solvents — and don't sand clear Lexan, because the scratches show from the "
+        "outside.",
+    ),
+    # Corrección de una entrada heredada del sistema REP: mandaba a usar primer
+    # epóxico primero en Lexan, que es justo lo contrario de cómo se pinta por
+    # dentro un cuerpo de RC transparente.
+    (
+        "Works with polycarbonate / Lexan bodies?",
+        "Yes. On a clear Lexan RC body you paint from the INSIDE, and the first coating over the "
+        "clean interior is Tropical Glitz The Hornet Adhesion Promoter — not an epoxy primer. The "
+        "Hornet bonds to the polycarbonate and stays flexible so the paint moves with the body. "
+        "Clean with warm water and mild dish soap, let it dry, don't sand the clear Lexan (the "
+        "scratches show from outside), then 1-2 light coats of The Hornet, then your color in light "
+        "coats, with the ground coat going on LAST because you're painting in reverse. A compatible "
+        "clear over the inside is optional. For rigid plastic parts that aren't clear — bumpers, "
+        "wings, chassis — normal plastic prep with an adhesion promoter applies instead.",
     ),
 ]
 
