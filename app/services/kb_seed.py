@@ -64,10 +64,8 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "plastic part. Test piece first — the ground coat changes the look a lot.",
     ),
     (
-        "Do candy colors need a base coat?",
-        "Yes. Candy is translucent, so the final color and brightness come from the metallic "
-        "base underneath it (silver, gold, white, etc.). The same candy over a silver base vs. "
-        "a gold base looks completely different, so pick your base to get the tone you want.",
+        'Do candy colors need a base coat?',
+        "Yes, and which base you need depends on the TYPE of paint you're spraying — that's the rule to go by, not the individual color name.\n\nTrue candies (our Candy Concentrates) are translucent, so all of the color and sparkle come from what's underneath. They need a METALLIC ground coat — we normally recommend a metallic silver. A plain silver primer is not the same thing and will look flat.\n\nCandy basecoats we normally recommend over BLACK, because black gives you depth. Silver or white also work if you want the color to read lighter and brighter — it's your call on how deep you want it.\n\nRegular basecoats are heavily pigmented and cover on their own, so grey, white or black underneath all give you the same finished color. Pick whatever is convenient.\n\nChameleons are the one hard rule: they MUST go over a black base. Over anything lighter the color-shift effect won't show properly.\n\nWhatever you choose, spray a test card first — ground coat changes the final look more than almost anything else you do.",
     ),
     (
         "Do I need to reduce or thin the paint before spraying?",
@@ -868,6 +866,144 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "coats, with the ground coat going on LAST because you're painting in reverse. A compatible "
         "clear over the inside is optional. For rigid plastic parts that aren't clear — bumpers, "
         "wings, chassis — normal plastic prep with an adhesion promoter applies instead.",
+    ),
+
+    # ===== Conocimiento del correo de soporte (nov 2025 - ago 2026) =====
+    (
+        'If I spray your metal flake or pearl spray can, will it give me color on its own?',
+        "No, and this is the single most common mix-up we see. Our Spray Can Flakes and Spray Can Pearls are flake or pearl suspended in Intercoat Clear — a transparent carrier. There is no paint pigment in them. Sprayed straight onto primer you'll see the primer color with sparkle sitting in it, not a solid color.\n\nThe order is: basecoat first for your color, then the flake or pearl can over it, then clear coat on top. Many of our flakes are made to match a specific basecoat by name — use the matching basecoat and you'll get exactly what you saw in the photos. Adding more flake cans won't fix a missing basecoat.",
+    ),
+    (
+        'Do your Interstellar pearls change the color of the paint underneath?',
+        "No. Interstellar Pearls are transparent pearl pigment in a clear carrier — they add shimmer and shift without tinting the base color. Over black you'll still have black, just with the pearl effect in it. If you want the color itself to change, that has to come from the basecoat. Pearl gets more pronounced with more coats, so build up until you like it and stop there.",
+    ),
+    (
+        'How much flake do I mix into the intercoat clear?',
+        'Reduce the Intercoat Clear 1:1 with Tropical Glitz Reducer first, then add flake to that mixture — never mix flake straight into the paint or into your final clear coat.\n\nAs a starting point: about 2.5 oz of flake per pint, or about 5 oz per quart. For a full-panel job, roughly 2.5-3 lbs per sprayable gallon gives you a strong effect, and closer to 4 lbs per 2 gallons gets you near full coverage. Around 50 percent coverage already looks great without going overboard.\n\nAdd it in small amounts and stir often — flake settles fast, and the bigger sizes clog if you load the cup too heavily.',
+    ),
+    (
+        'How much heat can your paint and your metal flake take?',
+        "Two different numbers, and it matters which one applies to you. Our paints withstand up to 400°F with proper prep — that covers brake calipers, valve covers, timing covers and engine bay pieces. Our metal flake is rated to 350°F, so if your project has flake in it, 350°F is your real ceiling.\n\nExhaust headers run hotter than either number and we don't carry anything rated for them — we'd rather tell you that than sell you something that fails. Remember the whole system is limited by whichever product in it has the lowest rating, including your primer and clear.",
+    ),
+    (
+        "Do you sell single-stage paint that doesn't need a clear coat?",
+        "No. Everything we make is a basecoat system, so every color needs a clear coat over it. The clear is what gives you the gloss, the UV protection and the chemical and fuel resistance — the color coat on its own won't hold up. Our primers can't be left exposed as a finish either; they're porous and need to be topcoated.",
+    ),
+    (
+        'Which of your clear coats is isocyanate-free?',
+        "The 1K Clear is the only isocyanate-free clear we carry. All of our 2K clears contain isocyanate, since that's what the catalyst is. If you're spraying somewhere with limited ventilation — a garage attached to the house, for example — the 1K is the one to look at. Just know the trade-off: 2K cures harder and holds up far better to chemicals, fuel and UV, so for a show finish or anything that lives outside, 2K is the better choice with proper respiratory protection.",
+    ),
+    (
+        'Do your colors need a hardener or activator?',
+        "The color coats don't need a hardener. Reducer is the only thing you have to add — normally 1:1 for pourable sizes, though a few colors differ, so check the label or ask us for your exact color. Our Basecoat Activator is optional, at about 5-10 percent of the mix, added after you've already reduced the paint. It's there for extra durability and adhesion, not because the paint won't cure without it.\n\nClear coats are different — the 2K clears are catalyzed and do require their activator, which comes in different cure speeds.",
+    ),
+    (
+        'Is Intercoat Clear the same thing as clear coat?',
+        "No, and they're not interchangeable. Intercoat Clear is a transparent carrier — it's what you suspend flake or pearl in, and what you use to lock in a layer before taping or before the next step. It's reduced 1:1 with our Reducer and it doesn't need an activator for normal use.\n\nIt is not a protective topcoat. Your project still needs a real clear coat over everything at the end. Intercoat Clear comes as a 4 oz Ready-to-Spray bottle.",
+    ),
+    (
+        'How long does the clear coat take to fully cure?',
+        "Full cure typically runs 10-14 days depending on which clear you used — that's different from dry to the touch, which happens far sooner. Handle the part gently until then, and don't bolt a freshly painted piece back onto something that generates heat before it's fully cured or you can compromise the finish. If you're planning to wet sand and buff, wait for full cure.",
+    ),
+    (
+        'How long do your spray cans last in storage?',
+        "About a year for an unopened can stored at room temperature, out of extreme heat or cold. Test a can when it arrives rather than the night before a big job, so there's time to sort out anything wrong. Our pourable paints, clears and reducers keep much longer — years — as long as they're sealed and stored properly. Cans with flake in them do better stored upside down so the flake doesn't pack down at the bottom.",
+    ),
+    (
+        'How much area does one spray can cover?',
+        "Roughly 3.5 square feet per 12 oz can, and that figure includes one coat plus some blending. Bear in mind translucent colors need several coats, so multiply accordingly — a candy needing 5-6 coats will eat cans quickly.\n\nFor anything bigger than small parts we'd steer you to a spray gun with quart or gallon material instead. A whole vehicle in cans is very hard to keep consistent, and it usually costs more than buying pourable paint.",
+    ),
+    (
+        'Can I use your paint over Rust-Oleum, Krylon, lacquer or enamel products?',
+        "We'd advise against all of those. Rust-Oleum and Krylon products react with our system — we've traced delayed cracking back to a Rust-Oleum etching primer underneath, even after most of it had been sanded off. Lacquer-based, enamel and acrylic products aren't compatible either, and self-etch primers have caused adhesion problems.\n\nIf any of those are already on the part, sand back to the bare substrate and start over with a compatible primer. Urethane-based primers and sealers from other brands are generally fine, and we can confirm our products work with the SPI line we carry. Anything untested, spray a test panel first — we can't guarantee another brand's chemistry.",
+    ),
+    (
+        'Can I use your paint on leather, rubber, fabric or glass?',
+        "Leather, rubber, suede and fabric are a no — our paint is a solvent-based polyurethane made for rigid surfaces, and it won't stay put on something that flexes or absorbs like that. Hats and shoes fall in the same category.\n\nGlass and glazed ceramic we simply haven't tested, so we can't promise anything. An adhesion promoter might work, but you'd be experimenting — try a hidden spot first.",
+    ),
+    (
+        'Is my paint job gasoline resistant?',
+        "The color coat by itself isn't. What gives you fuel resistance is a quality clear coat over it, fully cured. That matters on tanks, filler necks and anywhere spills happen — wipe fuel off promptly even once it's cleared, and don't put the part into service before the clear has fully cured, which takes 10-14 days.",
+    ),
+    (
+        'What is the difference between your RTS bottles, spray cans and quarts?',
+        "Three formats, three different uses.\n\nSpray cans are 12 oz aerosols, ready to spray with nothing added — good for small parts and touch-ups. The nozzle ships detached inside the cap on purpose so it can't discharge in transit; that's not damage.\n\nReady-to-Spray bottles come in 2 oz and 4 oz, already reduced. They still need an airbrush or a spray gun — they're not aerosols. This is the size made for airbrushing and small detail work.\n\nPints, quarts and gallons ship unreduced. You add Reducer yourself, normally 1:1. Spraying these straight out of the container is the most common reason someone tells us their color came out much darker than the website photo.\n\nThe color formula is identical across formats, so a can and a bottle of the same color will blend seamlessly for touch-ups.",
+    ),
+    (
+        'Why does my candy look washed out or the wrong color?',
+        "Nine times out of ten it's the ground coat. Candies are translucent, so they take their character from what's underneath — sprayed over bare primer, or over a flat black when the color wanted metallic silver, you'll get a muddy or lifeless result. Adding a pearl coat on top won't rescue it; the base has to be right.\n\nThe other common cause is coat count. Candies typically need 5-6 light coats to reach full depth, and the first couple of coats always look thin and disappointing. That's normal, keep building.\n\nOne more thing worth knowing: spray the whole project in one session. Coming back another day almost always leaves visible differences between panels.",
+    ),
+    (
+        'Why is my Eclipse color almost black?',
+        "That's exactly how the Eclipse line is designed to look. These colors read very dark, close to black, until light hits them — then the color and shimmer come alive. It isn't a defect and there's nothing wrong with your can.\n\nTwo things that help: spray them over a black base, and give them enough coats. A black epoxy primer can serve as the ground coat, so you don't always need a separate black basecoat step. Eclipse is heavily pigmented, so if you're airbrushing it use a larger tip — a 0.5 mm will fight you.",
+    ),
+    (
+        'Why does my spray can clog partway through?',
+        "Heavily pigmented colors and the finer flake lines are more prone to this. Here's the routine that prevents it:\n\nWarm the can in warm water or in the sun for about 5 minutes before you start. Shake it 2-3 minutes, not 20 seconds. After each pass, turn the can upside down and give it a short burst to clear the valve. Re-shake every so often while you work. Any time you stop, pull the nozzle and soak it in lacquer thinner. Before you resume, shake again and re-warm if the can has cooled.\n\nIf a can still won't behave after that, send us a short video at support@tropicalglitz.net and we'll take care of it with a replacement or a refund.",
+    ),
+    (
+        'My spray can arrived with the nozzle loose — is it damaged?',
+        "No, that's how they ship. We send cans with the spray tip detached inside the cap so the can can't accidentally discharge in transit. Just press the nozzle onto the stem before you spray. The small metal stem on top of the can is the valve, and seeing it bare is normal too. If the stem itself is bent or broken, that's different — send us a photo and we'll replace it.",
+    ),
+    (
+        'Can I still recoat if I waited more than 24 hours?',
+        'Yes, you just have to scuff first. Inside 24 hours a basecoat will take the next coat with no sanding. Past that window, give it a light scuff with a grey Scotch-Brite pad, clean the surface, and continue. Skipping that step is a common cause of peeling later.\n\nOne caution: if you have an unprotected pearl or flake layer on top, scuffing can burn through it. In that case spray a coat of Intercoat Clear first and scuff that instead. Our epoxy primer has a longer window, around 7 days, and going past it is fine as long as you scuff with 600 grit and clean before color.',
+    ),
+    (
+        'Can you ship paint outside the United States?',
+        "Liquid and aerosol products — paints, clears, reducers, activators — can't leave North America. They're classified as flammable, which means they can't fly, and ground freight only reaches so far. We ship the full catalog within the US, Canada and Mexico.\n\nDry goods are a different story: loose metal flake, dry pearls and leaf aren't flammable liquids and we can ship those internationally. So if flake is what you're after, we can very likely get it to you — email support@tropicalglitz.net with your location and they'll confirm.",
+    ),
+    (
+        'Can I get expedited or overnight shipping on paint?',
+        "No, and it's the same flammability rule — paint and aerosols can't travel by air, even domestically. Everything moves by ground, through UPS or USPS. If you were charged for an expedited option at checkout, contact support@tropicalglitz.net and they'll refund the difference.\n\nFor planning: allow 1-2 business days of production before your order ships, since paint is made to order rather than pulled off a shelf, then 2-5 business days in transit. Hawaii, Alaska and Puerto Rico take 10-16 business days.",
+    ),
+    (
+        'What is your return policy?',
+        "All sales are final as a rule, and the reason is that we mix every order to order — nothing sits pre-made on a shelf, so a returned color can't simply go back into stock.\n\nIf something arrives damaged, defective or isn't what you ordered, that's on us: send a photo or a short video to support@tropicalglitz.net and the team will sort out a replacement, refund or store credit. For a change of mind, they do sometimes make an exception on unopened product, with a 15 percent restocking fee to cover what was already produced. Original shipping isn't refundable.\n\nBest way to avoid the situation entirely is to buy a 2 oz Ready-to-Spray bottle or a single can of a color and spray a test card before committing to a full project's worth.",
+    ),
+    (
+        'Do you send free samples, color chips or a printed catalog?',
+        "We don't — no pre-painted samples, no chip books, no swatch cards and no printed catalog. Every color we make is listed on the website and it's kept current as new ones come out.\n\nWhat we'd suggest instead: buy the smallest size of the color you're considering — a 2 oz or 4 oz Ready-to-Spray bottle, a single spray can, or a 1.5 oz jar of flake — and spray a test card over the ground coat you plan to use. That tells you far more than a chip would anyway, because ground coat and coat count change the final look so much.",
+    ),
+    (
+        'Do you offer wholesale or dealer pricing for my shop?',
+        "Yes — we run a Dealer and Shop Program with discounts and special conditions for businesses, and there are tiers based on purchase volume. Shops of any size are welcome, including hobby and model retailers.\n\nTo get you the program details, the team needs a few things about your business: your main customer base, how and why the business got started, your location, how you plan to sell the products, and which products you're interested in. Send those to support@tropicalglitz.net and they'll send the program documents over.\n\nWorth knowing: enrolling in the program is also the route to sales-tax exemption, which needs a resale certificate.",
+    ),
+    (
+        'Do you have an affiliate program?',
+        "We do. Affiliates earn 5 percent commission on every sale made through their link, and start with 10 percent off our products for themselves — that discount can grow based on how the partnership performs. It's aimed at content creators and builders rather than businesses reselling product; for that, ask about the Dealer Program instead.\n\nEmail support@tropicalglitz.net to get started and the team will walk you through it.",
+    ),
+    (
+        'Do you sponsor builds, events or car shows?',
+        "There is a partnership and sponsorship program, but it's typically full — we get far more requests than we have room for, so we'd rather be upfront than leave you waiting on an answer that isn't coming.\n\nThe affiliate program is open, though, and is often a better fit: 5 percent commission on sales through your link, starting at 10 percent off for yourself, and it can grow from there. Email support@tropicalglitz.net if you'd like to talk about it.",
+    ),
+    (
+        'Do you have a rewards or points program?',
+        "Yes — you earn points on purchases and redeem them from your account on the site. Log in with the same email you signed up with and you'll find them there.\n\nTwo things that catch people out: points from an order become available for your next purchase, not the one that earned them, and they convert into a single code rather than being split across several orders. Points also can't be added retroactively to a purchase made before you joined.",
+    ),
+    (
+        'Can I visit your store, or pick up my order instead of shipping it?',
+        "Yes to both. We're in Miami, Florida, and you can select Pick Up in Store at checkout instead of a shipping method. Our warehouse handles pickups 9 AM to 3 PM EST, Monday through Friday.\n\nIf you have technical questions, coming by is worth it — you can talk them through with someone in person, which beats email for anything complicated.",
+    ),
+    (
+        'What is Paint by Code and what do you need from me?',
+        "Paint by Code is our OEM factory color matching service. To mix it we need the manufacturer's paint code plus the vehicle's make, year and model — the code alone isn't always enough, because manufacturers often ran several variants under one code.\n\nWhat we can't work from: a photo, a hex or RGB value, a powder-coat sample, or a description of a color you have in mind. Those aren't enough to produce a formula.\n\nTwo limits worth knowing upfront. The result is a close approximation, not an exact replica. And because it's mixed specifically for you, a Paint by Code order can't be modified after the fact, cancelled or returned. Some codes carry a minimum order quantity. Email support@tropicalglitz.net with your code and vehicle details to get started.",
+    ),
+    (
+        'Can you add flake or pearl to a Paint by Code color?',
+        "No — a Paint by Code formula has to be mixed exactly to the factory specification, so we can't blend flake or pearl into it or adjust the shade. What you can do is spray it as your basecoat and then add flake or pearl as a separate layer over the top, suspended in Intercoat Clear, before you clear coat. That gets you the effect without touching the matched formula.",
+    ),
+    (
+        'Can you make me a custom color, or tweak one of your existing colors?',
+        "We don't do bespoke colors or formula changes — what's listed on the website is what we make, plus true OEM matches through Paint by Code. Making a one-off would mean it couldn't be reproduced consistently, which isn't fair to you if you ever need more.\n\nIf you have a look in mind, send reference photos to support@tropicalglitz.net and the team will point you to the closest thing in the lineup — and they'll tell you straight if nothing is close rather than sell you something that won't match. Also remember you can shift a color a long way with ground coat and coat count before you need a different product.",
+    ),
+    (
+        'Can I use your flakes and pearls with PVC plastisol for fishing lures?',
+        "Yes — our flakes and pearls are compatible with PVC plastisol and hold up to 350°F, and we have plenty of customers making lures with them. Random-cut flake tends to look better than hex for that application.\n\nIf you're painting hard lure bodies rather than pouring soft plastic, prep is the variable: scuff the surface, then The Hornet Adhesion Promoter, then your color. Test a small batch first to confirm it behaves the way you want in your process.",
+    ),
+    (
+        'What do I need for a full car candy paint job?',
+        "The standard stack is epoxy primer, a metallic silver basecoat, your candy reduced with Tropical Glitz Reducer, then clear coat. If you're adding flake, it goes in between — suspended in Intercoat Clear over the basecoat.\n\nRough quantities for a full-size vehicle: about 1.5-2 gallons of candy, since it's translucent and needs 5-6 coats, around 2 gallons of reducer, a gallon kit of clear and a gallon kit of primer. A mid-size car is closer to 2-3 quarts of color; a motorcycle tank and fenders, about a quart. For full flake coverage on a large vehicle, budget 4-5 lbs of flake.\n\nBuy a little extra rather than risk running short mid-job — a second batch sprayed days later is much harder to blend. Send the team your project details at support@tropicalglitz.net and they'll size it with you.",
     ),
 ]
 
