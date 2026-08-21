@@ -265,17 +265,24 @@ async def yt_poll(request: Request, session: AsyncSession = Depends(get_session)
     if not _auth_ok(key):
         return HTMLResponse(_admin_locked("Token inválido."), 401)
     try:
-        res = await yt_comments.poll_once(session)
+        # Pocos borradores en el botón: la petición tiene que volver rápido.
+        # El resto los completa el bucle de fondo cada 5 minutos.
+        res = await yt_comments.poll_once(session, draft_limit=3)
     except Exception as exc:  # noqa: BLE001
         _log.exception("Falló el sondeo manual de YouTube")
         return _back(key, str(exc)[:300], True)
     if not res.get("ok"):
         return _back(key, res.get("error", "No se pudo revisar."), True)
-    return _back(
-        key,
+    msg = (
         f"Revisados {res['scanned']} comentarios · {res['nuevos']} nuevos · "
-        f"{res.get('borradores', 0)} borradores",
+        f"{res.get('borradores', 0)} borradores"
     )
+    if res.get("pendientes_de_redactar"):
+        msg += (
+            f" · quedan {res['pendientes_de_redactar']} por redactar, "
+            "se van completando solos cada 5 minutos"
+        )
+    return _back(key, msg)
 
 
 @router.post("/admin/youtube/approve")
