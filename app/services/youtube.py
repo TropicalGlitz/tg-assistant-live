@@ -89,6 +89,7 @@ async def connection(session: AsyncSession) -> dict[str, Any] | None:
     row = (await session.execute(
         text("SELECT channel_id, channel_title, connected_at FROM yt_auth WHERE id = 1")
     )).mappings().first()
+    await session.commit()  # lectura corta: no dejar transacción abierta
     return dict(row) if row else None
 
 
@@ -164,6 +165,7 @@ async def access_token(session: AsyncSession) -> str:
     )).first()
     if not row:
         raise RuntimeError("YouTube no está conectado todavía.")
+    await session.commit()  # el refresh con Google tarda; sin esto la tx queda abierta
 
     async with httpx.AsyncClient(timeout=20) as cli:
         r = await cli.post(TOKEN_URL, data={

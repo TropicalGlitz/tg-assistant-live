@@ -60,6 +60,13 @@ POLL_SECONDS = 300
 # Clasificaciones que merecen borrador. El resto se archiva sin gastar tokens.
 ANSWERABLE = {"question", "buying"}
 
+# La PRIMERA corrida se encuentra el histórico entero del canal. Clasificar es
+# barato (6 tokens) y se hace en paralelo; redactar no lo es, así que se limita
+# por corrida y el resto lo va completando el bucle de fondo. Sin esto, el botón
+# "Revisar ahora" se quedaría colgado hasta que Render corta la petición.
+CLASSIFY_BATCH = 8
+MAX_DRAFTS_PER_RUN = 12
+
 
 async def _ensure(session: AsyncSession) -> None:
     global _ensured
@@ -174,6 +181,10 @@ async def draft_reply(session: AsyncSession, body: str, video_title: str = "") -
     query = body.strip()[:1500]
     hits = await rag.retrieve(session, query)
     context = rag.build_context(hits)
+    # Cerramos la transacción de lectura antes de la llamada al modelo. Si se
+    # queda abierta durante los segundos que tarda Claude, Postgres la mata por
+    # statement/idle timeout y el INSERT posterior revienta.
+    await session.commit()
 
     prompt = (
         f"{_DRAFT_RULES}\n\n"
@@ -199,7 +210,9 @@ async def draft_reply(session: AsyncSession, body: str, video_title: str = "") -
 # Sondeo
 # --------------------------------------------------------------------------- #
 
-async def poll_once(session: AsyncSession, pages: int = 2) -> dict[str, Any]:
+async def poll_once(
+    session: AsyncSession, pages: int = 2, draft_limit: int = MAX_DRAFTS_PER_RUN
+) -> dict[str, Any]:
     """Trae comentarios nuevos, los clasifica y redacta los que valen la pena.
 
     Solo mira hilos de nivel superior. Descarta los que ya respondimos, los
@@ -262,36 +275,74 @@ async def poll_once(session: AsyncSession, pages: int = 2) -> dict[str, Any]:
         bindparam("ids", expanding=True)
     )
     known = {r[0] for r in (await session.execute(stmt, {"ids": ids})).all()}
+    await session.commit()  # no dejar la transacción abierta durante la clasificación
     fresh = [c for c in seen_new if c["comment_id"] not in known]
     if not fresh:
         return {"ok": True, "scanned": scanned, "nuevos": 0, "borradores": 0}
 
     titles = await youtube.video_titles(session, [c["video_id"] for c in fresh])
-
-    drafted = 0
     for c in fresh:
         c["video_title"] = titles.get(c["video_id"], "")
-        kind = await classify(c["body"])
-        draft = ""
-        if kind in ANSWERABLE:
-            try:
-                draft = await draft_reply(session, c["body"], c["video_title"])
-                drafted += 1
-            except Exception:  # noqa: BLE001
-                _log.exception("Falló el borrador del comentario %s", c["comment_id"])
+
+    # Clasificación en paralelo: 200 comentarios de uno en uno tardarían minutos.
+    kinds: list[str] = []
+    for i in range(0, len(fresh), CLASSIFY_BATCH):
+        chunk = fresh[i:i + CLASSIFY_BATCH]
+        kinds.extend(await asyncio.gather(*(classify(c["body"]) for c in chunk)))
+
+    # Guardamos YA, sin borrador. Así el trabajo no se pierde si algo falla
+    # después, y el panel se puede abrir aunque los borradores lleguen luego.
+    for c, kind in zip(fresh, kinds):
         await session.execute(
             text(
                 "INSERT INTO yt_comments (comment_id, video_id, video_title, author, author_url,"
                 " body, published_at, kind, draft, status) "
                 "VALUES (:comment_id, :video_id, :video_title, :author, :author_url, :body,"
-                " :published_at, :kind, :draft, :status) "
+                " :published_at, :kind, '', :status) "
                 "ON CONFLICT (comment_id) DO NOTHING"
             ),
-            {**c, "kind": kind, "draft": draft,
+            {**c, "kind": kind,
              "status": "pending" if kind in ANSWERABLE else "archived"},
         )
     await session.commit()
-    return {"ok": True, "scanned": scanned, "nuevos": len(fresh), "borradores": drafted}
+
+    drafted = await draft_pending(session, limit=draft_limit) if draft_limit else 0
+    faltan = sum(1 for k in kinds if k in ANSWERABLE) - drafted
+    return {
+        "ok": True, "scanned": scanned, "nuevos": len(fresh),
+        "borradores": drafted, "pendientes_de_redactar": max(0, faltan),
+    }
+
+
+async def draft_pending(session: AsyncSession, limit: int = MAX_DRAFTS_PER_RUN) -> int:
+    """Redacta los borradores que faltan, de más nuevo a más viejo.
+
+    Se llama al final de cada sondeo y también sola desde el bucle de fondo,
+    para ir vaciando la cola sin bloquear una petición del panel.
+    """
+    rows = (await session.execute(
+        text(
+            "SELECT comment_id, body, video_title FROM yt_comments "
+            "WHERE status = 'pending' AND coalesce(draft, '') = '' "
+            "ORDER BY published_at DESC NULLS LAST LIMIT :lim"
+        ),
+        {"lim": limit},
+    )).all()
+    await session.commit()  # idem: el bucle de abajo tarda segundos por borrador
+    done = 0
+    for cid, body, title in rows:
+        try:
+            draft = await draft_reply(session, body, title or "")
+        except Exception:  # noqa: BLE001
+            _log.exception("Falló el borrador del comentario %s", cid)
+            continue
+        await session.execute(
+            text("UPDATE yt_comments SET draft = :d WHERE comment_id = :c"),
+            {"d": draft, "c": cid},
+        )
+        await session.commit()   # commit por borrador: el avance no se pierde
+        done += 1
+    return done
 
 
 async def mark_replied(session: AsyncSession, comment_id: str, body: str, reply_id: str) -> None:
@@ -369,6 +420,10 @@ async def run_forever() -> None:
                     if res.get("nuevos"):
                         _log.info("YouTube: %s comentarios nuevos, %s borradores",
                                   res["nuevos"], res.get("borradores", 0))
+                    # Cola pendiente del histórico: se va vaciando poco a poco
+                    # en vez de intentarlo todo de golpe en la primera corrida.
+                    if res.get("pendientes_de_redactar"):
+                        await draft_pending(session, limit=MAX_DRAFTS_PER_RUN)
         except Exception:  # noqa: BLE001
             # Nunca dejamos morir el bucle: un fallo de red o de cuota no debe
             # apagar el sondeo hasta el próximo redeploy.
