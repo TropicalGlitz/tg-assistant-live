@@ -53,6 +53,17 @@ class Settings(BaseSettings):
     # Destino: bandeja del equipo de soporte. Override: CONTACT_TO_EMAIL.
     contact_to_email: str = "support@tropicalglitz.net"
 
+    # --- YouTube (comentarios del canal) ---
+    # Credenciales del OAuth client (tipo "Web application") del proyecto de
+    # Google Cloud. Si quedan vacías, el panel /admin/youtube lo dice y el
+    # sondeo no arranca. El refresh token NO va aquí: se guarda en la BD.
+    youtube_client_id: str = ""
+    youtube_client_secret: str = ""
+    # Tiene que coincidir EXACTO con el "Authorized redirect URI" de Google.
+    youtube_redirect_uri: str = "https://tg-assistant-ie5p.onrender.com/admin/youtube/callback"
+    # Modelo para la clasificación (1 palabra por comentario). Vacío = usa llm_model.
+    yt_classifier_model: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:
