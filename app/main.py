@@ -4,7 +4,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import chat, webhooks
+from app.api.routes import chat, webhooks, youtube
 from app.core.config import get_settings
 
 _settings = get_settings()
@@ -21,6 +21,7 @@ app.add_middleware(
 
 app.include_router(webhooks.router)
 app.include_router(chat.router)
+app.include_router(youtube.router)
 
 
 @app.on_event("startup")
@@ -35,6 +36,7 @@ async def _warmup() -> None:
         public_ingest,
         spi_ingest,
         video_ingest,
+        yt_comments,
     )
 
     try:
@@ -61,6 +63,10 @@ async def _warmup() -> None:
         # Videos del canal de YouTube: idempotente por hash, aprende uploads
         # nuevos en cada arranque.
         video_ingest.run_startup,
+        # Bandeja de comentarios de YouTube: sondea el canal cada 5 minutos y
+        # deja borradores pendientes de aprobación humana. Si el canal no está
+        # conectado, el bucle simplemente duerme.
+        yt_comments.run_forever,
     ):
         try:
             _bg_tasks.append(asyncio.create_task(coro_factory()))
