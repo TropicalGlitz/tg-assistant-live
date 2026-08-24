@@ -81,6 +81,16 @@ def _parse(payload: dict[str, Any]) -> list[dict[str, Any]]:
     Instagram manda field='comments'; Facebook manda field='feed' con
     item='comment'. Se ignora todo lo demás (likes, reacciones, ediciones).
     """
+    # El botón "Test" del panel de Meta manda el evento SUELTO, sin el sobre
+    # entry[] que usa producción. Lo normalizamos para poder probar el circuito
+    # completo antes de publicar la app.
+    if not payload.get("entry"):
+        smp = payload.get("sample") or payload
+        if isinstance(smp, dict) and smp.get("field") and smp.get("value"):
+            payload = {"entry": [{"id": "", "changes": [
+                {"field": smp["field"], "value": smp["value"]}
+            ]}]}
+
     out: list[dict[str, Any]] = []
     for entry in payload.get("entry") or []:
         entry_id = str(entry.get("id") or "")
@@ -126,6 +136,8 @@ async def ingest(session: AsyncSession, payload: dict[str, Any]) -> int:
     """Guarda los comentarios del webhook y redacta los que valen la pena."""
     await _ensure(session)
     items = _parse(payload)
+    # Diagnóstico: solo las CLAVES del payload, nunca el contenido.
+    _log.info("Webhook Meta: claves=%s · eventos=%s", sorted(payload.keys()), len(items))
     if not items:
         return 0
 
