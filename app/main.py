@@ -1,6 +1,8 @@
 """Punto de entrada FastAPI."""
 from __future__ import annotations
 
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,6 +10,15 @@ from app.api.routes import chat, meta, webhooks, youtube
 from app.core.config import get_settings
 
 _settings = get_settings()
+
+# Sin esto, Python deja el root logger en WARNING y TODOS los _log.info() de la
+# app se descartan sin dejar rastro. Los usamos para saber qué está pasando en
+# los webhooks y en los sondeos, así que tienen que llegar a los logs de Render.
+logging.basicConfig(
+    level=getattr(logging, _settings.log_level.upper(), logging.INFO),
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    force=True,
+)
 
 app = FastAPI(title="Shopify RAG Backend", version="0.1.0")
 
