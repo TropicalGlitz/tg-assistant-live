@@ -6,6 +6,7 @@ con el token en un campo oculto, no en la URL.
 """
 from __future__ import annotations
 
+import datetime as _dt
 import html
 import logging
 import secrets
@@ -17,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.routes.chat import _admin_locked, _admin_page, _fmt_time, _form_data
 from app.core.config import get_settings
 from app.db.session import get_session
-from app.services import yt_comments, youtube
+from app.services import meta, meta_comments, yt_comments, youtube
 
 _log = logging.getLogger("yt_routes")
 _settings = get_settings()
@@ -33,6 +34,12 @@ _TABS = (
     ("archived", "Ruido"),
     ("all", "Todos"),
 )
+
+_SOURCE = {
+    "yt": ("YouTube", "#fee2e2", "#991b1b", "/admin/youtube"),
+    "ig": ("Instagram", "#fce7f3", "#9d174d", "/admin/meta"),
+    "fb": ("Facebook", "#dbeafe", "#1e40af", "/admin/meta"),
+}
 
 _KIND_LABEL = {
     "question": ("Pregunta", "#dbeafe", "#1e40af"),
@@ -109,18 +116,66 @@ def _connect_box(kf: str, conn: dict | None) -> str:
     )
 
 
+def _meta_box(kf: str, conn: dict | None) -> str:
+    if not meta.configured():
+        return (
+            "<div class='conn'><b>Instagram y Facebook sin configurar</b>"
+            "<div class='note' style='margin-top:6px'>Agrega <code>META_APP_ID</code>, "
+            "<code>META_APP_SECRET</code> y <code>META_VERIFY_TOKEN</code> en Render.</div></div>"
+        )
+    if not conn or not conn.get("pages"):
+        return (
+            "<div class='conn'><b>Instagram y Facebook no están conectados</b>"
+            "<div class='note' style='margin-top:6px'>Autoriza la página de Facebook y la "
+            "cuenta de Instagram ligada a ella.</div>"
+            "<div class='row'>"
+            "<form method='post' action='/admin/meta/connect' style='margin:0'>"
+            f"<input type='hidden' name='key' value='{kf}'>"
+            "<button class='go' type='submit'>Conectar Instagram y Facebook</button></form>"
+            "</div></div>"
+        )
+    names = ", ".join(
+        html.escape(p.get("page_name") or p.get("page_id") or "")
+        + (f" (@{html.escape(p['ig_username'])})" if p.get("ig_username") else "")
+        for p in conn["pages"]
+    )
+    return (
+        "<div class='conn'>"
+        f"<b>Conectado: {names}</b>"
+        "<div class='note' style='margin-top:6px'>Meta avisa al instante — aquí no hay sondeo.</div>"
+        "<div class='row'>"
+        "<form method='post' action='/admin/meta/subscribe' style='margin:0'>"
+        f"<input type='hidden' name='key' value='{kf}'>"
+        "<button class='ghost' type='submit'>Re-suscribir páginas</button></form>"
+        "<form method='post' action='/admin/meta/disconnect' style='margin:0'>"
+        f"<input type='hidden' name='key' value='{kf}'>"
+        "<button class='ghost' type='submit'>Desconectar</button></form>"
+        "</div></div>"
+    )
+
+
 def _card(kf: str, c: dict) -> str:
     cid = html.escape(c["comment_id"])
+    src = c.get("source") or "yt"
+    s_label, s_bg, s_fg, prefix = _SOURCE.get(src, _SOURCE["yt"])
     label, bg, fg = _KIND_LABEL.get(c.get("kind") or "pending", _KIND_LABEL["pending"])
-    vid = c.get("video_id") or ""
-    title = c.get("video_title") or vid or "—"
-    link = f"https://www.youtube.com/watch?v={html.escape(vid)}&lc={cid}" if vid else ""
+
+    if src == "yt":
+        vid = c.get("video_id") or ""
+        title = c.get("video_title") or vid or "—"
+        link = f"https://www.youtube.com/watch?v={html.escape(vid)}&lc={cid}" if vid else ""
+    else:
+        title = c.get("permalink") and "ver publicación" or (c.get("post_id") or "—")
+        link = c.get("permalink") or ""
+
     head = (
         "<div class='top'>"
         f"<span class='who'>{html.escape(c.get('author') or 'Anónimo')}</span>"
+        f"<span class='kind' style='background:{s_bg};color:{s_fg}'>{s_label}</span>"
         f"<span class='kind' style='background:{bg};color:{fg}'>{label}</span>"
-        + (f"<a class='vid' href='{link}' target='_blank' rel='noopener'>{html.escape(title)}</a>"
-           if link else f"<span class='vid'>{html.escape(title)}</span>")
+        + (f"<a class='vid' href='{html.escape(link)}' target='_blank' rel='noopener'>"
+           f"{html.escape(str(title))}</a>"
+           if link else f"<span class='vid'>{html.escape(str(title))}</span>")
         + f"<span class='when'>{_fmt_time(c['published_at']) if c.get('published_at') else '—'}</span>"
         "</div>"
     )
@@ -147,19 +202,20 @@ def _card(kf: str, c: dict) -> str:
     )
     return (
         "<div class='ytc'>" + head + body
-        + "<form method='post' action='/admin/youtube/approve' style='margin:0'>"
+        + f"<form method='post' action='{prefix}/approve' style='margin:0'>"
         + f"<input type='hidden' name='key' value='{kf}'>"
         + f"<input type='hidden' name='comment_id' value='{cid}'>"
         + editor
         + "<div class='acts'>"
         + "<button class='go' type='submit'>Publicar respuesta</button>"
-        + f"<button class='sec2' type='submit' formaction='/admin/youtube/regenerate'>Regenerar</button>"
-        + f"<button class='warn' type='submit' formaction='/admin/youtube/skip'>Descartar</button>"
+        + f"<button class='sec2' type='submit' formaction='{prefix}/regenerate'>Regenerar</button>"
+        + f"<button class='warn' type='submit' formaction='{prefix}/skip'>Descartar</button>"
         + "</div></form></div>"
     )
 
 
-def _page(key: str, conn: dict | None, rows: list[dict], counts: dict, tab: str, msg: str, bad: bool) -> str:
+def _page(key: str, conn: dict | None, mconn: dict | None, rows: list[dict],
+          counts: dict, tab: str, msg: str, bad: bool) -> str:
     kf = html.escape(key)
     tabs = "".join(
         f"<a class='{'on' if tab == slug else ''}' href='/admin/youtube?key={kf}&tab={slug}'>"
@@ -176,6 +232,7 @@ def _page(key: str, conn: dict | None, rows: list[dict], counts: dict, tab: str,
         + "<div class='sub'>El asistente redacta, tú apruebas. Nada se publica sin tu clic.</div>"
         + flash
         + _connect_box(kf, conn)
+        + _meta_box(kf, mconn)
         + f"<div class='filters'>{tabs}</div>"
         + cards
     )
@@ -208,9 +265,21 @@ async def admin_youtube(
         return HTMLResponse(_admin_locked("Token inválido."), 401)
 
     conn = await youtube.connection(session)
+    mconn = await meta.connection(session)
+
+    # Una sola bandeja: YouTube, Instagram y Facebook mezclados y ordenados por
+    # fecha. Cada tarjeta sabe a qué endpoint mandar sus acciones.
     counts = await yt_comments.counters(session)
-    rows = await yt_comments.listing(session, status=tab)
-    return HTMLResponse(_page(key, conn, rows, counts, tab, msg, bad == "1"))
+    for st, n in (await meta_comments.counters(session)).items():
+        counts[st] = counts.get(st, 0) + n
+
+    rows = [dict(r, source="yt") for r in await yt_comments.listing(session, status=tab)]
+    rows += await meta_comments.listing(session, status=tab)
+    # Sin fecha van al final. Un sentinel evita comparar None con datetime,
+    # que revienta el sort.
+    _floor = _dt.datetime.min.replace(tzinfo=_dt.timezone.utc)
+    rows.sort(key=lambda r: r.get("published_at") or _floor, reverse=True)
+    return HTMLResponse(_page(key, conn, mconn, rows[:80], counts, tab, msg, bad == "1"))
 
 
 @router.post("/admin/youtube/connect")
