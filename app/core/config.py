@@ -64,6 +64,18 @@ class Settings(BaseSettings):
     # Modelo para la clasificación (1 palabra por comentario). Vacío = usa llm_model.
     yt_classifier_model: str = ""
 
+    # --- Meta (comentarios de Instagram y páginas de Facebook) ---
+    # App de developers.facebook.com. Sin esto, el panel lo indica y el webhook
+    # rechaza todo. Los tokens de página se guardan en la BD, no aquí.
+    meta_app_id: str = ""
+    meta_app_secret: str = ""
+    # Cadena que el dueño inventa y repite en el panel de Webhooks de Meta.
+    meta_verify_token: str = ""
+    # Tiene que coincidir EXACTO con el redirect URI configurado en la app.
+    meta_redirect_uri: str = "https://tg-assistant-ie5p.onrender.com/admin/meta/callback"
+    # Versión de la Graph API. Se puede bajar por entorno si Meta deprecia una.
+    meta_api_version: str = "v23.0"
+
 
 @lru_cache
 def get_settings() -> Settings:
