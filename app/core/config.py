@@ -75,6 +75,10 @@ class Settings(BaseSettings):
     meta_redirect_uri: str = "https://tg-assistant-ie5p.onrender.com/admin/meta/callback"
     # Versión de la Graph API. Se puede bajar por entorno si Meta deprecia una.
     meta_api_version: str = "v23.0"
+    # "Facebook Login for Business" NO usa `scope`: usa una Configuración creada
+    # en el panel de la app, identificada por este id. Si está vacío se cae al
+    # login clásico con scope (que es lo que falla en apps de tipo Business).
+    meta_login_config_id: str = ""
 
 
 @lru_cache
