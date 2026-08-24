@@ -72,13 +72,24 @@ def configured() -> bool:
 
 
 def auth_url(state: str) -> str:
-    return DIALOG.format(v=_v()) + "?" + urlencode({
+    """Diálogo de autorización.
+
+    Las apps de tipo Business usan "Facebook Login for Business", donde los
+    permisos NO se piden con `scope` sino con una Configuración creada en el
+    panel (`config_id`). Mandar `scope` en ese flujo hace que Facebook conceda
+    el login pero SIN activos: por eso /me/accounts volvía vacío.
+    """
+    params = {
         "client_id": _settings.meta_app_id,
         "redirect_uri": _settings.meta_redirect_uri,
         "state": state,
-        "scope": SCOPES,
         "response_type": "code",
-    })
+    }
+    if _settings.meta_login_config_id:
+        params["config_id"] = _settings.meta_login_config_id
+    else:
+        params["scope"] = SCOPES
+    return DIALOG.format(v=_v()) + "?" + urlencode(params)
 
 
 def verify_signature(raw_body: bytes, header: str | None) -> bool:
@@ -140,6 +151,17 @@ async def exchange_code(session: AsyncSession, code: str) -> list[dict[str, Any]
             raise RuntimeError(f"No se pudo alargar el token: {r.text[:300]}")
         long_token = r.json().get("access_token", short)
 
+        # Diagnóstico: qué permisos concedió de verdad. Sin esto no hay forma de
+        # distinguir "no marcó la página" de "no se pidió el permiso".
+        try:
+            perm = await cli.get(f"{GRAPH}/{_v()}/me/permissions",
+                                 params={"access_token": long_token})
+            granted = [d.get("permission") for d in (perm.json().get("data") or [])
+                       if d.get("status") == "granted"]
+            _log.info("Meta: permisos concedidos = %s", granted)
+        except Exception:  # noqa: BLE001
+            _log.warning("No se pudieron leer los permisos concedidos")
+
         # Páginas que administra, con su token propio y su cuenta de IG ligada.
         r = await cli.get(f"{GRAPH}/{_v()}/me/accounts", params={
             "fields": "id,name,access_token,instagram_business_account{id,username}",
@@ -149,6 +171,8 @@ async def exchange_code(session: AsyncSession, code: str) -> list[dict[str, Any]
         if r.status_code >= 400:
             raise RuntimeError(f"No se pudieron leer las páginas: {r.text[:300]}")
         data = r.json().get("data") or []
+        _log.info("Meta: /me/accounts devolvió %s página(s): %s",
+                  len(data), [d.get("name") for d in data])
 
     pages = []
     for p in data:
@@ -162,8 +186,10 @@ async def exchange_code(session: AsyncSession, code: str) -> list[dict[str, Any]
         })
     if not pages:
         raise RuntimeError(
-            "La cuenta autorizada no administra ninguna página de Facebook. "
-            "Revisa que hayas dado permiso sobre la página correcta."
+            "Facebook devolvió cero páginas. Si la app es de tipo Business, hay "
+            "que crear una Configuración en Facebook Login for Business y poner "
+            "su id en META_LOGIN_CONFIG_ID; con `scope` suelto el login se "
+            "concede pero sin activos. Revisa también ser ADMIN de la página."
         )
 
     await session.execute(
