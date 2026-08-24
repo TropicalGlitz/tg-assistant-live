@@ -4,7 +4,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import chat, webhooks, youtube
+from app.api.routes import chat, meta, webhooks, youtube
 from app.core.config import get_settings
 
 _settings = get_settings()
@@ -22,6 +22,7 @@ app.add_middleware(
 app.include_router(webhooks.router)
 app.include_router(chat.router)
 app.include_router(youtube.router)
+app.include_router(meta.router)
 
 
 @app.on_event("startup")
