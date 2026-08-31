@@ -65,7 +65,7 @@ KNOWLEDGE: list[tuple[str, str]] = [
     ),
     (
         'Do candy colors need a base coat?',
-        "Yes, and which base you need depends on the TYPE of paint you're spraying — that's the rule to go by, not the individual color name.\n\nTrue candies (our Candy Concentrates) are translucent, so all of the color and sparkle come from what's underneath. They need a METALLIC ground coat — we normally recommend a metallic silver. A plain silver primer is not the same thing and will look flat.\n\nCandy basecoats we normally recommend over BLACK, because black gives you depth. Silver or white also work if you want the color to read lighter and brighter — it's your call on how deep you want it.\n\nRegular basecoats are heavily pigmented and cover on their own, so grey, white or black underneath all give you the same finished color. Pick whatever is convenient.\n\nChameleons are the one hard rule: they MUST go over a black base. Over anything lighter the color-shift effect won't show properly.\n\nWhatever you choose, spray a test card first — ground coat changes the final look more than almost anything else you do.",
+        'Yes, and the ground coat you need depends on which SERIES the color belongs to — not on the word "candy" alone. Here\'s the whole map:\n\nTRUE CANDIES (our Candy line) go over one of our three silver basecoats. We make three silver basecoats and the one you pick changes the finished color:\nMercury Silver gives a smooth, silky aluminum look. Galactic Silver is a medium-sparkle silver. Comet Silver is our high-metallic, most reflective silver.\nSpray a test card with the silver you\'re considering before committing — the same candy over Mercury and over Comet are two different-looking paint jobs.\n\nCANDY BASECOATS OVER BLACK — the Cosmic, Eclipse, Luscious, Seductive and 4th of July Limited Edition series are semi-transparent and go over a black primer or basecoat like Abyss Black. Black gives the contrast and depth that makes them look rich and dimensional. One exception: Seductive Violet, which we recommend over white.\n\nCANDY BASECOATS OVER WHITE — the Lollipop series goes over a white ground coat like Snow White. White is what creates that bright, silky Lollipop look. Putting a Lollipop over black will not give you the effect it\'s known for.\n\nCHAMELEONS, including the whole Orbit Shift series, MUST go over black (Abyss Black). Over anything lighter the color shift won\'t show properly.\n\nNEONS go over white for maximum brightness. PEARLS (our Vice series) also go over white. FLAKE MATCHED BASECOATS work over any ground coat, with grey recommended. SOLIDS and our silvers work over anything.\n\nWhatever you\'re spraying, a test card first is worth the ten minutes — ground coat changes the outcome more than almost anything else you do.',
     ),
     (
         "Do I need to reduce or thin the paint before spraying?",
@@ -1004,6 +1004,60 @@ KNOWLEDGE: list[tuple[str, str]] = [
     (
         'What do I need for a full car candy paint job?',
         "The standard stack is epoxy primer, a metallic silver basecoat, your candy reduced with Tropical Glitz Reducer, then clear coat. If you're adding flake, it goes in between — suspended in Intercoat Clear over the basecoat.\n\nRough quantities for a full-size vehicle: about 1.5-2 gallons of candy, since it's translucent and needs 5-6 coats, around 2 gallons of reducer, a gallon kit of clear and a gallon kit of primer. A mid-size car is closer to 2-3 quarts of color; a motorcycle tank and fenders, about a quart. For full flake coverage on a large vehicle, budget 4-5 lbs of flake.\n\nBuy a little extra rather than risk running short mid-job — a second batch sprayed days later is much harder to blend. Send the team your project details at support@tropicalglitz.net and they'll size it with you.",
+    ),
+
+    # ===== Ground coat por serie (tabla del cliente, ago 2026) =====
+    (
+        'What base coat do I use under your Candy colors?',
+        "All of our true Candy colors go over one of our three silver basecoats.\n\nWe make three silver basecoats and the one you pick changes the finished color:\nMercury Silver gives a smooth, silky aluminum look. Galactic Silver is a medium-sparkle silver. Comet Silver is our high-metallic, most reflective silver.\nSpray a test card with the silver you're considering before committing — the same candy over Mercury and over Comet are two different-looking paint jobs.\n\nThis applies to the whole Candy line: Blue Raspberry, Brown Sugar, Mary Iguana, Fanta Orange, Wild Fire, Merlot, Sangria, Desert Rose, Zenith Gold, Harvest Gold, Fool's Gold, Loki Green, Lemon Head, Sapphire, Blue Scales, Candy Apple Red, Sunglow, Monarch, Violet, Black Candy, Tropical Teal, Aqua, Lime Green, Maple Syrup, Fruity Punch, Purple Flare and Black Cherry.\n\nCandies are translucent, so plan on 5-6 coats to build full color, and spray the whole project in one session — coming back another day tends to leave visible differences between panels.",
+    ),
+    (
+        'What ground coat do the Cosmic colors need?',
+        "The Cosmic series are candy basecoats and semi-transparent, so they go over a black primer or basecoat — Abyss Black is what we'd use. The black background gives you the contrast and depth that makes the candy look rich and dimensional; over a light ground coat they read washed out.\n\nThe series: Cosmic Violet, Cosmic Purple, Cosmic Gold, Cosmic Orange, Cosmic Green, Cosmic Black, Cosmic Blue and Cosmic Red.\n\nWorth knowing: the Cosmic line comes premixed with metal flake from the factory, so expect visible texture when it dries. Three to four heavy coats of clear will bury it and level the finish.",
+    ),
+    (
+        'What ground coat do the Eclipse colors need?',
+        "Eclipse colors are candy basecoats and semi-transparent — spray them over a black primer or basecoat like Abyss Black. A black epoxy primer can serve as that ground coat, so you don't always need a separate black basecoat step.\n\nThe series: Eclipse Red, Eclipse Blue, Eclipse Orange, Eclipse Green, Eclipse Gold, Eclipse Violet, Eclipse Purple and Eclipse Smoke.\n\nEclipse reads very dark, almost black, until light hits it — that's the design, not a defect. It's also heavily pigmented, so if you're airbrushing use a larger tip; a 0.5mm will fight you.",
+    ),
+    (
+        'What ground coat does the Luscious series need?',
+        'The Luscious colors are candy basecoats and semi-transparent, so they go over a black primer or basecoat. The black background is what brings out the rich, dimensional candy depth.\n\nThe series: Luscious Blackberry, Luscious Purple, Luscious Green, Luscious Orange and Luscious Toffee.',
+    ),
+    (
+        'What ground coat does the Seductive series need?',
+        'The Seductive colors are candy basecoats and semi-transparent. Seductive Red, Seductive Cherry, Seductive Blue and Seductive Plum go over a black primer or basecoat for that deep, dimensional candy look.\n\nSeductive Violet is the one exception in the series: we recommend it over a WHITE primer or basecoat, which brings out its bright, vibrant tone. It also looks great over black — that just gives you a darker, moodier version of the same color. If you want it at its brightest, go white.',
+    ),
+    (
+        'What ground coat does the Lollipop series need?',
+        "The Lollipop colors are candy basecoats, but unlike our other candy basecoats they go over WHITE — Snow White is the one we'd use. The white ground coat is what creates the bright, silky look the Lollipop series is known for. Over black you'd lose exactly the effect you bought it for.\n\nThe series: Pineapple, Orange, Tropical Punch, Green Apple, Blueberry, Passionfruit, Dragonfruit, Cherry, Rootbeer, Iced Grape and Watermelon Lollipop.",
+    ),
+    (
+        'What ground coat do Chameleon and Orbit Shift colors need?',
+        "Black, and this one isn't a preference — it's what makes the effect work. All of our Chameleon colors go over a black basecoat like Abyss Black. The black is what lets the color-shifting tones show properly; over anything lighter the shift washes out and you won't see what you paid for.\n\nChameleon: Perseus, Apollo, Eos, Phoenix and Hercules.\n\nOrbit Shift, which is also a Chameleon line and follows the same rule: Titan Mist, Galactic Rush, Polar Haze, Jupiter Surge, Nebula Pulse, Venus Glow, Neptune Frost and Martian Sunset.\n\nOne more thing: don't spray metal flake over a Chameleon — it interferes with the shift.",
+    ),
+    (
+        'What ground coat do the Flake Matched Basecoats need?',
+        "These are the most forgiving in the lineup — they can go over any color ground coat. For best results we'd recommend a neutral grey, because these basecoats are formulated to match our metal flake colors and grey gives them a clean background without pushing the final color one way or the other.\n\nThe line: Candy Apple Green, Cloudy Dayz, Midnight Blue, Pink Lemonade, Inferno, Winter Blackberry, Luna Blue, Luna Blue Dark, Grape Taffy, Grape Jelly, Violet Rose, Raspberry Mousse, Barry Jam, Berry Blast, Unikitty, Pink Ruby, Bubblegum, Fruity Bubblegum, Purple Royale, Lilac Blast, Royal Teal, Avocado, Blue Lagoon, Blue Waves, Cotton Candy, Cilantro, Cuban Mojito, Deco Drive, Electric Blue, Fudge Brownie, Gator Green, Peacock Blue, Aqua Boogie, Bikini Bottom, Indigo, Overcast, Blueberry Jam, Sunkissed, Black Onyx, Tangy Tangerine, Gold Nugget and Caribbean Blue.\n\nEach of these has a metal flake of the same name made to go with it — spray the basecoat first, then the matching flake over it, then clear.",
+    ),
+    (
+        'What ground coat do the Neon colors need?',
+        "White. Our Neon colors go over a white ground coat like Snow White — the clean white background is what lets them hit their most vibrant, intense tone. Any other ground coat will shift the final appearance.\n\nThe series: Solar Flare, Mega Magenta, Hot Pink, Mutant Ooze, Mellow Yellow, Tennis Ball and Lorax Orange.\n\nBe straight with yourself about where this is going, though: Neons are not UV-resistant and will fade in sunlight. Neither a UV clear nor covering them with flake prevents it. They're best for indoor pieces or small projects. If you need a similar tone that holds up outside, look at the Candy line instead.",
+    ),
+    (
+        'What ground coat does the Vice series need?',
+        'The Vice colors are pearl basecoats. They can go over different ground coats, but we recommend white — Snow White — because the white background is what brings out the brightness and the pearl effect. Other ground coats will change how they finish.\n\nThe series: Pink Flamingo, Cuban Link, Miami Beach, Art Deco, Beach Bronze, Miami Night Life, Coral Reef, Royal Amethyst, Certified Gangster, Florida Grown and Pink Malibu.\n\nPearls build with coats, so add them until you like the effect and stop there.',
+    ),
+    (
+        'What ground coat do your silver basecoats and solid colors need?',
+        "These are the easy ones. Our silvers — Mercury Silver, Galactic Silver and Comet Silver — and our solid colors — Abyss Black, Snow White and Yellow Submarine — can go over any color primer or ground coat. We'd suggest grey out of habit, but since these are solid, opaque colors the ground coat underneath barely affects the finished result.\n\nThat's the opposite of how candies behave, where the ground coat is most of the final look.",
+    ),
+    (
+        'What ground coat do the 4th of July colors need?',
+        "Old Glory Red and Star-Spangled Blue are candy basecoats and semi-transparent, so they go over a black primer or basecoat for the deep, dimensional candy look. They're a limited edition, so availability isn't guaranteed long term — if you're planning a project around them, buy what you need for the whole job at once.",
+    ),
+    (
+        'What is the difference between Mercury Silver, Galactic Silver and Comet Silver?',
+        "We make three silver basecoats and the one you pick changes the finished color:\nMercury Silver gives a smooth, silky aluminum look. Galactic Silver is a medium-sparkle silver. Comet Silver is our high-metallic, most reflective silver.\nSpray a test card with the silver you're considering before committing — the same candy over Mercury and over Comet are two different-looking paint jobs.\n\nAll three are solid basecoats, so they'll cover over any primer — grey is our usual suggestion but it barely matters. Where they matter enormously is under a candy: the silver you choose IS the character of the finished color. If someone asks for a less sparkly result, steer them toward Mercury; if they want maximum pop, Comet.",
     ),
 ]
 
