@@ -1073,6 +1073,30 @@ async def _existing_hashes(qs: list[str]) -> dict[str, str]:
         return {r[0]: r[1] for r in rows}
 
 
+# Marca de versión del índice. Cambiarla obliga a re-embeber TODO en el próximo
+# arranque; se usa cuando cambia CÓMO indexamos, no qué guardamos.
+_INDEX_VERSION = "v2-qa"
+
+# Cuánto de la respuesta entra al vector. El modelo corta alrededor de 512
+# tokens, así que pasarse no aporta y sí diluye la señal de la pregunta.
+_INDEX_ANSWER_CHARS = 700
+
+
+def _index_text(question: str, answer: str) -> str:
+    """Texto que se convierte en vector.
+
+    Antes solo se embebía la PREGUNTA, así que nada del cuerpo era buscable: un
+    cliente que preguntaba por un color puntual no encontraba la entrada de su
+    serie porque el nombre del color vivía en la respuesta. Ahora indexamos
+    pregunta + el arranque de la respuesta.
+    """
+    return question + "\n" + (answer or "")[:_INDEX_ANSWER_CHARS]
+
+
+def _hash(question: str, answer: str) -> str:
+    return embeddings.content_hash(f"{_INDEX_VERSION}|{question}|{answer}")
+
+
 async def run_seed() -> None:
     """Inserta el conocimiento que falte en `faqs` y ACTUALIZA las entradas cuya
     respuesta cambió (comparando content_hash). Idempotente y barato: solo embebe
@@ -1086,14 +1110,19 @@ async def run_seed() -> None:
     missing = [
         (q, a)
         for q, a in KNOWLEDGE
-        if have.get(q) != embeddings.content_hash(q + "|" + a)
+        if have.get(q) != _hash(q, a)
     ]
     if not missing:
         _log.info("Base de conocimiento al día (%s entradas); nada que sembrar", len(KNOWLEDGE))
         return
     _log.info("Sembrando %s entradas de conocimiento nuevas...", len(missing))
     try:
-        vectors = await embeddings.embed_batch([q for q, _ in missing])
+        # Lotes chicos: el contenedor tiene 512MB y embeber 120 textos de golpe
+        # lo puede tumbar.
+        vectors: list = []
+        for i in range(0, len(missing), 24):
+            chunk = missing[i:i + 24]
+            vectors.extend(await embeddings.embed_batch([_index_text(q, a) for q, a in chunk]))
         async with AsyncSessionLocal() as session:
             for (q, a), vec in zip(missing, vectors):
                 await kb_store.upsert_faq(
@@ -1106,7 +1135,7 @@ async def run_seed() -> None:
                     related_product_id=None,
                     post_action="offer_assistance",
                     time_used=0,
-                    content_hash=embeddings.content_hash(q + "|" + a),
+                    content_hash=_hash(q, a),
                 )
         _log.info("Sembradas %s entradas de conocimiento", len(missing))
     except Exception:  # noqa: BLE001
