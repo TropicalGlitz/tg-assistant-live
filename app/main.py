@@ -48,6 +48,7 @@ async def _warmup() -> None:
         public_ingest,
         spi_ingest,
         video_ingest,
+        webhook_setup,
         yt_comments,
     )
 
@@ -79,6 +80,10 @@ async def _warmup() -> None:
         # deja borradores pendientes de aprobación humana. Si el canal no está
         # conectado, el bucle simplemente duerme.
         yt_comments.run_forever,
+        # Shopify BORRA sola una suscripción de webhook tras 8 fallos seguidos.
+        # Nos pasó con orders/create y dejamos de capturar ventas sin aviso.
+        # Esto la recrea en cada arranque; es idempotente.
+        webhook_setup.run_startup,
     ):
         try:
             _bg_tasks.append(asyncio.create_task(coro_factory()))
