@@ -237,16 +237,59 @@ async def video_titles(session: AsyncSession, video_ids: list[str]) -> dict[str,
     return out
 
 
+class CommentGone(RuntimeError):
+    """El comentario ya no existe en YouTube (borrado, oculto o en revisión)."""
+
+
+async def resolve_parent(session: AsyncSession, comment_id: str) -> str:
+    """Devuelve el id al que hay que colgar la respuesta.
+
+    Tres cosas pueden salir mal y las tres devuelven el mismo 404 opaco:
+      1. El comentario fue borrado por su autor o retenido para revisión entre
+         el sondeo y el clic en Publicar.
+      2. El id guardado es el de una RESPUESTA, no el del comentario raíz.
+         YouTube no anida respuestas: hay que colgarlas del comentario de nivel
+         superior, así que si el guardado tiene `parentId`, ese es el bueno.
+      3. El comentario existe pero pertenece a otro canal.
+
+    Una llamada a comments.list (1 unidad de cuota) distingue los tres casos.
+    """
+    token = await access_token(session)
+    async with httpx.AsyncClient(timeout=25) as cli:
+        r = await cli.get(
+            f"{API}/comments",
+            params={"part": "snippet", "id": comment_id},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    if r.status_code >= 400:
+        raise RuntimeError(f"No se pudo leer el comentario ({r.status_code}): {r.text[:200]}")
+    items = r.json().get("items") or []
+    if not items:
+        raise CommentGone(
+            "Ese comentario ya no está en YouTube. Lo más probable es que el autor "
+            "lo haya borrado, o que YouTube lo tenga retenido para revisión."
+        )
+    sn = items[0].get("snippet") or {}
+    # Si trae parentId, lo que guardamos era una respuesta: subimos a la raíz.
+    return sn.get("parentId") or comment_id
+
+
 async def post_reply(session: AsyncSession, parent_id: str, body: str) -> str:
-    """Publica una respuesta dentro del hilo `parent_id`. Devuelve el id creado."""
+    """Publica una respuesta colgando del comentario raíz. Devuelve el id creado."""
+    real_parent = await resolve_parent(session, parent_id)
     token = await access_token(session)
     async with httpx.AsyncClient(timeout=30) as cli:
         r = await cli.post(
             f"{API}/comments",
             params={"part": "snippet"},
             headers={"Authorization": f"Bearer {token}"},
-            json={"snippet": {"parentId": parent_id, "textOriginal": body}},
+            json={"snippet": {"parentId": real_parent, "textOriginal": body}},
         )
     if r.status_code >= 400:
-        raise RuntimeError(f"YouTube rechazó la respuesta ({r.status_code}): {r.text[:300]}")
+        # Incluimos el parentId usado: sin eso el 404 de YouTube no dice nada.
+        _log.error("comments.insert falló para parent=%s: %s", real_parent, r.text[:300])
+        raise RuntimeError(
+            f"YouTube rechazó la respuesta ({r.status_code}) sobre el comentario "
+            f"{real_parent}: {r.text[:220]}"
+        )
     return r.json().get("id", "")
