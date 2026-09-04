@@ -368,6 +368,11 @@ async def yt_approve(request: Request, session: AsyncSession = Depends(get_sessi
         return _back(key, "La respuesta está vacía.", True)
     try:
         reply_id = await youtube.post_reply(session, cid, body)
+    except youtube.CommentGone as exc:
+        # No es un fallo nuestro: el comentario desapareció. Lo archivamos para
+        # que no se quede atascado en "Por responder" para siempre.
+        await yt_comments.set_status(session, cid, "archived")
+        return _back(key, str(exc), True)
     except Exception as exc:  # noqa: BLE001
         _log.exception("Falló publicar la respuesta en YouTube")
         return _back(key, str(exc)[:300], True)
