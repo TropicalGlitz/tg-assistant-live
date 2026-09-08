@@ -543,11 +543,8 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "it took off.",
     ),
     (
-        "Do you have a discount code or coupon?",
-        "If this is your first order with us, yes — use WELCOME at checkout for 10% off. No "
-        "minimum purchase, and it stacks with free shipping on US orders over $499. It's one use "
-        "per customer, so it's for first-time buyers. Beyond that we don't have other codes "
-        "running unless you see one advertised on the site.",
+        'Do you have a discount code or coupon?',
+        "We've got two ways to save, and you'd use one or the other on an order — they don't stack.\n\nIf this is your first order, use WELCOME at checkout for 10% off. No minimum purchase, and it does stack with free shipping on US orders over $499. It's one use per customer.\n\nThe bigger one is 20% off, and you earn it by leaving us a Google review. Here's how it works:\n\n1. Leave us a review on Google: https://g.page/r/CUqp6kToBvrDEAE/review\n2. Email support@tropicalglitz.net with the review you left, and include your first and last name exactly as it appears on the review.\n3. The team checks it and sends you your 20% code.\n\nThe name matters — that's how they find your review to confirm it. If the name on your email doesn't match the one on the review, they can't match them up.\n\nA few things to know: the 20% applies to Tropical Glitz brand products, so it doesn't cover the SPI line or other brands we carry. It's one per customer, and it doesn't stack with the WELCOME code — you'd use whichever gives you more on that order. Since the codes are issued by hand, give the team a little time to get back to you.",
     ),
     (
         "I signed up for SMS but didn't receive the welcome discount",
@@ -557,12 +554,8 @@ KNOWLEDGE: list[tuple[str, str]] = [
         "let us know at support@tropicalglitz.net and we'll sort it out.",
     ),
     (
-        "Is the WELCOME code for everyone or only new customers?",
-        "WELCOME is one use per customer, so in practice it's the first-time buyer offer — 10% "
-        "off, no minimum, and it stacks with free shipping on US orders over $499. If you've "
-        "already used it on a previous order it won't go through a second time. If you're a "
-        "returning customer looking for a deal, email support@tropicalglitz.net and the team can "
-        "let you know what's currently running.",
+        'Is the WELCOME code for everyone or only new customers?',
+        "WELCOME is one use per customer, so in practice it's the first-order offer — 10% off, no minimum, and it stacks with free shipping on US orders over $499. If you've already used it, it won't go through a second time.\n\nIf you're a returning customer, the one to look at is our 20% off for leaving a Google review — that one isn't limited to first-time buyers. Here's how it works:\n\n1. Leave us a review on Google: https://g.page/r/CUqp6kToBvrDEAE/review\n2. Email support@tropicalglitz.net with the review you left, and include your first and last name exactly as it appears on the review.\n3. The team checks it and sends you your 20% code.\n\nThe name matters — that's how they find your review to confirm it. If the name on your email doesn't match the one on the review, they can't match them up.\n\nA few things to know: the 20% applies to Tropical Glitz brand products, so it doesn't cover the SPI line or other brands we carry. It's one per customer, and it doesn't stack with the WELCOME code — you'd use whichever gives you more on that order. Since the codes are issued by hand, give the team a little time to get back to you.",
     ),
     (
         "Can I apply Tropical Glitz paint over existing paint?",
@@ -1058,6 +1051,16 @@ KNOWLEDGE: list[tuple[str, str]] = [
     (
         'What is the difference between Mercury Silver, Galactic Silver and Comet Silver?',
         "We make three silver basecoats and the one you pick changes the finished color:\nMercury Silver gives a smooth, silky aluminum look. Galactic Silver is a medium-sparkle silver. Comet Silver is our high-metallic, most reflective silver.\nSpray a test card with the silver you're considering before committing — the same candy over Mercury and over Comet are two different-looking paint jobs.\n\nAll three are solid basecoats, so they'll cover over any primer — grey is our usual suggestion but it barely matters. Where they matter enormously is under a candy: the silver you choose IS the character of the finished color. If someone asks for a less sparkly result, steer them toward Mercury; if they want maximum pop, Comet.",
+    ),
+
+    # ===== 20% por resena de Google (sept 2026) =====
+    (
+        'How can I get 20% off?',
+        "By leaving us a Google review. Here's how it works:\n\n1. Leave us a review on Google: https://g.page/r/CUqp6kToBvrDEAE/review\n2. Email support@tropicalglitz.net with the review you left, and include your first and last name exactly as it appears on the review.\n3. The team checks it and sends you your 20% code.\n\nThe name matters — that's how they find your review to confirm it. If the name on your email doesn't match the one on the review, they can't match them up.\n\nA few things to know: the 20% applies to Tropical Glitz brand products, so it doesn't cover the SPI line or other brands we carry. It's one per customer, and it doesn't stack with the WELCOME code — you'd use whichever gives you more on that order. Since the codes are issued by hand, give the team a little time to get back to you.",
+    ),
+    (
+        'I left a Google review, how do I get my discount?',
+        "Nice, thank you for that. Email support@tropicalglitz.net with the review you left and your first and last name exactly as it appears on it — that's how the team finds it to confirm — and they'll send your 20% code back.\n\nI can't issue the code myself; it's handed out by a person after they check the review, so it takes a little time.\n\nWhen it arrives it'll work on Tropical Glitz brand products (not the SPI line or other brands we carry), it's one per customer, and it doesn't stack with WELCOME — use whichever saves you more.",
     ),
 ]
 
